@@ -138,6 +138,74 @@
     return ["admin","staff"].includes(state.profile?.role);
   }
 
+  function isAdmin() {
+    return state.profile?.role === "admin";
+  }
+
+  async function deleteCatRecord() {
+    const cat = state.selectedCat;
+    if (!cat || !isAdmin()) return toast("猫の削除は管理者のみ実行できます。");
+    const label = `${cat.management_no || "管理番号なし"} / ${cat.name || "名前未登録"}`;
+    const ok = window.confirm(`次の猫を一覧から削除します。
+${label}
+
+記録は完全消去せず、非表示にします。続けますか？`);
+    if (!ok) return;
+    try {
+      const { error } = await state.supabase.from("cats")
+        .update({ deleted_at: new Date().toISOString(), updated_by: state.user.id })
+        .eq("id", cat.id).is("deleted_at", null);
+      if (error) throw error;
+      state.selectedCat = null;
+      await loadCats();
+      panel("list-panel");
+      toast("猫を一覧から削除しました（記録は保持されています）。");
+    } catch (e) {
+      toast(`猫を削除できませんでした：${e.message || e}`);
+    }
+  }
+
+  async function deleteCatPhoto(fileId) {
+    const cat = state.selectedCat;
+    if (!cat || !isAdmin()) return toast("写真の削除は管理者のみ実行できます。");
+    const file = cat.files.find(f => f.id === fileId);
+    if (!file) return toast("写真情報が見つかりません。");
+    if (!window.confirm(`写真「${file.file_name || "名称未設定"}」をGoogle Driveとデータベースから削除します。
+この操作は元に戻せません。よろしいですか？`)) return;
+    try {
+      if (file.drive_file_id) {
+        const response = await driveApi(`files/${encodeURIComponent(file.drive_file_id)}`, {method:"DELETE"});
+        if (!response.ok && response.status !== 404) {
+          const detail = await response.text();
+          throw new Error(`Google Drive削除失敗 (${response.status})：${detail.slice(0, 180)}`);
+        }
+      }
+      const { error } = await state.supabase.from("cat_files").delete().eq("id", file.id).eq("cat_id", cat.id);
+      if (error) throw error;
+      if (state.driveImageUrls?.[file.drive_file_id]) {
+        URL.revokeObjectURL(state.driveImageUrls[file.drive_file_id]);
+        delete state.driveImageUrls[file.drive_file_id];
+      }
+      const remaining = cat.files.filter(f => f.id !== file.id);
+      const nextMain = remaining.find(f => f.is_main_photo) || remaining[0] || null;
+      if (file.is_main_photo || cat.main_photo_file_id === file.id) {
+        const { error: updateError } = await state.supabase.from("cats")
+          .update({main_photo_file_id: nextMain?.id || null, updated_by: state.user.id})
+          .eq("id", cat.id);
+        if (updateError) throw updateError;
+        if (nextMain && !nextMain.is_main_photo) {
+          const { error: mainError } = await state.supabase.from("cat_files")
+            .update({is_main_photo:true}).eq("id", nextMain.id).eq("cat_id", cat.id);
+          if (mainError) throw mainError;
+        }
+      }
+      toast("写真を削除しました。");
+      await openCat(cat.id);
+    } catch (e) {
+      toast(`写真を削除できませんでした：${e.message || e}`);
+    }
+  }
+
   async function loadCats() {
     const { data, error } = await state.supabase
       .from("cats")
@@ -313,7 +381,7 @@
       <div class="drive-box">
         <p>v1ではGoogle Driveのファイル情報をDBに保存する設計です。Drive OAuth・アップロードUIは次フェーズで接続します。</p>
         <div class="file-grid">
-          ${c.files.map(f => `<div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}"><div class="photo-loading">📷</div><small>${esc(f.file_name)}</small></div>`).join("")}
+          ${c.files.map(f => `<div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}"><div class="photo-loading">📷</div><small>${esc(f.file_name)}</small>${isAdmin() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}</div>`).join("")}
         </div>
       </div>` : ""}
 
@@ -322,6 +390,7 @@
         <div class="key">譲渡</div><div>${c.transfers.length ? esc(formatDate(c.transfers[0].transfer_date)) : "未登録"}</div>
         <div class="key">死亡</div><div>${c.deaths.length ? `${esc(formatDate(c.deaths[0].death_date))} / ${esc(c.deaths[0].cause || "原因未登録")}` : "—"}</div>
       </div>
+      ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
     const photoCards = document.querySelectorAll("[data-drive-file-id]");
     photoCards.forEach(async card => {
@@ -353,6 +422,11 @@
     });
     const add = $("add-observation");
     if (add) add.addEventListener("click", openObservationForm);
+    const deleteCatButton = $("delete-cat-button");
+    if (deleteCatButton) deleteCatButton.addEventListener("click", deleteCatRecord);
+    document.querySelectorAll(".photo-delete-button").forEach(btn => {
+      btn.addEventListener("click", () => deleteCatPhoto(btn.dataset.fileId));
+    });
   }
 
   function openCatForm(cat=null) {
@@ -677,6 +751,7 @@
       <div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}">
         <div class="photo-loading">📷</div>
         <small>${esc(f.file_name)}</small>
+        ${isAdmin() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}
       </div>
     `).join("");
     box.querySelectorAll("[data-drive-file-id]").forEach(async card => {
@@ -691,6 +766,9 @@
         const loading = card.querySelector(".photo-loading");
         if (loading) loading.textContent = "写真を表示できません";
       }
+    });
+    box.querySelectorAll(".photo-delete-button").forEach(btn => {
+      btn.addEventListener("click", () => deleteCatPhoto(btn.dataset.fileId));
     });
   }
 

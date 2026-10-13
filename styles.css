@@ -193,3 +193,8 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
   .health-actions { display:none !important; }
   .individual-record { width:281mm; height:194mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
 }
+
+/* 管理者による削除操作 */
+.danger-zone{margin-top:22px;padding:14px;border:1px solid #e3b8b8;border-radius:12px;background:#fff8f8;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.danger-zone p{margin:0;color:var(--danger);font-weight:700}
+.file-card .photo-delete-button{width:100%;margin-top:8px;padding:6px 8px;min-height:36px;font-size:13px}
