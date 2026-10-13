@@ -360,6 +360,13 @@ ${label}
             <div><strong>様子：</strong>${esc(o.behavior || "—")}</div>
             <div>${esc(o.memo || "")}</div>
             ${o.weight_kg ? `<div class="muted">体重 ${esc(o.weight_kg)} kg${o.temperature_c ? ` / 体温 ${esc(o.temperature_c)} ℃` : ""}</div>` : ""}
+            ${o.entry_type && o.entry_type !== "daily" ? `<div><strong>記録区分：</strong>${esc(o.entry_type === "rescue" ? "保護時" : "死亡記録")}</div>` : ""}
+            ${o.rescue_location ? `<div><strong>保護場所：</strong>${esc(o.rescue_location)}</div>` : ""}
+            ${o.rescue_details ? `<div><strong>保護時の状況：</strong>${esc(o.rescue_details)}</div>` : ""}
+            ${o.death_date ? `<div><strong>死亡日：</strong>${esc(formatDate(o.death_date))}</div>` : ""}
+            ${o.death_cause ? `<div><strong>死因：</strong>${esc(o.death_cause)}</div>` : ""}
+            ${o.veterinary_hospital ? `<div><strong>動物病院：</strong>${esc(o.veterinary_hospital)}</div>` : ""}
+            ${o.death_note ? `<div><strong>死亡時メモ：</strong>${esc(o.death_note)}</div>` : ""}
           </div>
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
@@ -374,10 +381,8 @@ ${label}
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
-      <h3 class="section-title">譲渡・死亡情報</h3>
-      <div class="info-grid">
-        <div class="key">譲渡</div><div>${c.transfers.length ? esc(formatDate(c.transfers[0].transfer_date)) : "未登録"}</div>
-      </div>
+      <h3 class="section-title">譲渡情報</h3>
+      <div class="info-grid"><div class="key">譲渡</div><div>${c.transfers.length ? esc(formatDate(c.transfers[0].transfer_date)) : "未登録"}</div></div>
       ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
     const photoCards = document.querySelectorAll("[data-drive-file-id]");
@@ -449,7 +454,7 @@ ${label}
       rescued_date: $("rescued-date").value || null,
       estimated_birth_date: $("estimated-birth-date").value || null,
       estimated_age_text: $("estimated-age").value.trim(),
-      status: desiredStatus === "deceased" ? "deceased" : desiredStatus,
+      status: desiredStatus,
       neuter_status: $("neuter-status").value,
       current_note: $("current-note").value.trim(),
       updated_by: state.user.id
@@ -474,9 +479,19 @@ ${label}
   function openObservationForm() {
     if (!state.selectedCat || !canEdit()) return;
     $("obs-date").value = today();
-    ["obs-condition","obs-appetite","obs-stool","obs-urine","obs-behavior","obs-weight","obs-temperature","obs-memo"].forEach(id => $(id).value = "");
+    $("obs-entry-type").value = "daily";
+    updateObservationTypeFields();
+    ["obs-condition","obs-appetite","obs-stool","obs-urine","obs-behavior","obs-weight","obs-temperature","obs-memo","obs-rescue-location","obs-rescue-details","obs-death-date","obs-death-cause","obs-death-hospital","obs-death-note"].forEach(id => $(id).value = "");
     message("observation-message","");
     panel("observation-panel");
+  }
+
+  function updateObservationTypeFields() {
+    const type = $("obs-entry-type").value;
+    $("obs-rescue-fields").classList.toggle("hidden", type !== "rescue");
+    $("obs-death-fields").classList.toggle("hidden", type !== "death");
+    $("obs-daily-fields").classList.toggle("hidden", type !== "daily");
+    if (type === "death" && !$("obs-death-date").value) $("obs-death-date").value = $("obs-date").value || today();
   }
 
   async function saveObservation(e) {
@@ -485,6 +500,13 @@ ${label}
     const payload = {
       cat_id: state.selectedCat.id,
       observation_date: $("obs-date").value,
+      entry_type: $("obs-entry-type").value,
+      rescue_location: $("obs-rescue-location").value.trim(),
+      rescue_details: $("obs-rescue-details").value.trim(),
+      death_date: $("obs-death-date").value || null,
+      death_cause: $("obs-death-cause").value.trim(),
+      veterinary_hospital: $("obs-death-hospital").value.trim(),
+      death_note: $("obs-death-note").value.trim(),
       observer_id: state.user.id,
       condition: $("obs-condition").value.trim(),
       appetite: $("obs-appetite").value.trim(),
@@ -495,9 +517,14 @@ ${label}
       temperature_c: $("obs-temperature").value ? Number($("obs-temperature").value) : null,
       memo: $("obs-memo").value.trim()
     };
-    if (!payload.observation_date) return message("observation-message","観察日を入力してください。","error");
+    if (!payload.observation_date) return message("observation-message","記録日を入力してください。","error");
+    if (payload.entry_type === "death" && !payload.death_date) return message("observation-message","死亡記録では死亡日を入力してください。","error");
     const { error } = await state.supabase.from("observations").insert(payload);
     if (error) return message("observation-message", error.message, "error");
+    if (payload.entry_type === "death") {
+      const statusUpdate = await state.supabase.from("cats").update({status: "deceased", updated_by: state.user.id}).eq("id", state.selectedCat.id);
+      if (statusUpdate.error) return message("observation-message", "死亡記録は保存しましたが、猫の状態を死亡に変更できませんでした：" + statusUpdate.error.message, "error");
+    }
     toast("観察日記を保存しました");
     await openCat(state.selectedCat.id);
   }
@@ -747,6 +774,13 @@ ${label}
         o.behavior ? `様子：${o.behavior}` : "",
         o.weight_kg ? `体重：${o.weight_kg}kg` : "",
         o.temperature_c ? `体温：${o.temperature_c}℃` : "",
+        o.entry_type && o.entry_type !== "daily" ? `記録区分：${o.entry_type === "rescue" ? "保護時" : "死亡記録"}` : "",
+        o.rescue_location ? `保護場所：${o.rescue_location}` : "",
+        o.rescue_details ? `保護時の状況：${o.rescue_details}` : "",
+        o.death_date ? `死亡日：${formatDate(o.death_date)}` : "",
+        o.death_cause ? `死因：${o.death_cause}` : "",
+        o.veterinary_hospital ? `動物病院：${o.veterinary_hospital}` : "",
+        o.death_note ? `死亡時メモ：${o.death_note}` : "",
         o.memo || ""
       ].filter(Boolean);
       return parts.join(" / ");
@@ -772,7 +806,7 @@ ${label}
               <div class="record-field"><b>FeLV</b><span>${test ? esc(TEST_LABEL[test.felv_result] || "") : ""}</span></div>
             </div>
           </div>
-          <div class="record-diary-title">観察日記（保護時の状況・死亡日なども記録）</div>
+          <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
           <div class="record-diary">${esc(diary)}</div>
         </div>
         <div class="record-right">
@@ -874,9 +908,13 @@ ${label}
     $("cancel-cat-button").addEventListener("click", () => panel("detail-panel"));
     $("cancel-cat-button-2").addEventListener("click", () => panel("detail-panel"));
     $("cat-form").addEventListener("submit", saveCat);
+    $("cat-status").addEventListener("change", () => {
+  
+    });
     $("back-to-detail-button").addEventListener("click", () => panel("detail-panel"));
     $("cancel-observation-button").addEventListener("click", () => panel("detail-panel"));
     $("observation-form").addEventListener("submit", saveObservation);
+    $("obs-entry-type").addEventListener("change", updateObservationTypeFields);
     $("print-button").addEventListener("click", printHealthForm);
     $("google-connect-button").addEventListener("click", async () => {
       try {
