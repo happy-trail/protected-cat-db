@@ -164,18 +164,20 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-left,.record-right { min-width:0; height:194mm; border:1px solid #222; display:flex; flex-direction:column; }
 .record-left { border-right:0; }
 .record-profile { display:grid; grid-template-columns:35% 65%; height:94mm; min-height:94mm; }
-.record-photo-wrap { border-right:1px solid #222; border-bottom:1px solid #222; min-width:0; }
-.record-photo { display:block; width:100%; height:100%; object-fit:contain; }
-.record-photo-empty { display:grid; place-items:center; color:#777; background:#fafafa; }
-.record-facts { min-width:0; display:flex; flex-direction:column; }
-.record-title-row { display:grid; grid-template-columns:1fr .75fr 1fr; min-height:9mm; border-bottom:1px solid #222; align-items:center; text-align:center; }
+.record-photo-wrap { border-right:1px solid #222; border-bottom:1px solid #222; min-width:0; min-height:0; display:flex; flex-direction:column; }
+.record-photo-title { flex:0 0 9mm; min-height:9mm; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; border-bottom:1px solid #222; }
+.record-photo-frame { flex:1 1 auto; min-height:0; min-width:0; display:flex; align-items:center; justify-content:center; padding:2mm; box-sizing:border-box; }
+.record-photo { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; object-position:center; }
+.record-photo-empty { display:grid; place-items:center; color:#777; background:#fafafa; width:100%; height:100%; }
+.record-facts { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.record-title-row { display:grid; grid-template-columns:35% 65%; min-height:9mm; border-bottom:1px solid #222; align-items:center; text-align:center; }
 .record-title-row > * { padding:1.2mm; border-right:1px solid #222; }
 .record-title-row > *:last-child { border-right:0; }
 .record-field { display:grid; grid-template-columns:48% 52%; flex:1; min-height:0; border-bottom:1px solid #555; }
 .record-field b,.record-field span { padding:1mm 1.3mm; display:flex; align-items:center; overflow-wrap:anywhere; }
 .record-field b { border-right:1px solid #555; font-weight:600; }
 .record-diary-title,.record-continuation-title { padding:1.8mm 2mm; font-weight:700; border-top:1px solid #222; border-bottom:1px solid #222; min-height:8mm; }
-.record-diary { padding:2mm; white-space:pre-wrap; overflow:hidden; flex:1; min-height:0; line-height:1.35; }
+.record-diary { padding:1.5mm 2mm; white-space:pre-wrap; overflow:hidden; flex:1; min-height:0; line-height:7mm; background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); background-position:left top; }
 .record-death { border-top:1px solid #222; padding:1.5mm 2mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; }
 .record-right { position:relative; }
 .record-adoption { height:62mm; min-height:62mm; border-bottom:1px solid #222; }
@@ -183,7 +185,6 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-adoption-content { padding:3mm; display:grid; gap:5mm; }
 .record-adoption-content > div { display:grid; grid-template-columns:20mm 1fr; min-height:8mm; border-bottom:1px solid #aaa; }
 .record-adoption-content b { font-weight:600; }
-.record-continuation-title { border-top:0; }
 .record-continuation { flex:1; min-height:0; background:repeating-linear-gradient(to bottom,transparent 0,transparent 8mm,#bbb 8mm,#bbb 8.2mm); }
 .record-bottom-number { border-top:1px solid #222; padding:1.5mm 2mm; min-height:8mm; }
 .health-actions { display:flex; gap:12px; align-items:center; margin:8px auto; max-width:281mm; font-size:14px; }

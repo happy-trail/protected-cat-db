@@ -791,9 +791,12 @@ ${label}
       <section class="individual-record">
         <div class="record-left">
           <div class="record-profile">
-            <div class="record-photo-wrap">${photo}</div>
+            <div class="record-photo-wrap">
+              <div class="record-photo-title">保護猫</div>
+              <div class="record-photo-frame">${photo}</div>
+            </div>
             <div class="record-facts">
-              <div class="record-title-row"><strong>保護猫</strong><span>管理番号</span><b>${esc(cat.management_no || "")}</b></div>
+              <div class="record-title-row"><span>管理番号</span><b>${esc(cat.management_no || "")}</b></div>
               <div class="record-field"><b>名前</b><span>${esc(cat.name || "")}</span></div>
               <div class="record-field"><b>性別</b><span>${esc(SEX_LABEL[cat.sex] || "不明")}</span></div>
               <div class="record-field"><b>保護日</b><span>${esc(formatDate(cat.rescued_date))}</span></div>
@@ -811,14 +814,13 @@ ${label}
         </div>
         <div class="record-right">
           <div class="record-adoption">
-            <div class="record-adoption-title">譲渡日　　　　　　　　　　　譲渡先</div>
+            <div class="record-adoption-title">譲渡記録</div>
             <div class="record-adoption-content">
               <div><b>譲渡日</b><span>${transfer ? esc(formatDate(transfer.transfer_date)) : ""}</span></div>
               <div><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
             </div>
           </div>
-          <div class="record-continuation-title">観察日記の続き（左下から続けて記入）</div>
-          <div class="record-continuation"></div>
+          <div class="record-continuation" aria-label="記入欄"></div>
           <div class="record-bottom-number">管理番号：${esc(cat.management_no || "")}</div>
         </div>
       </section>
