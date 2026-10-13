@@ -800,12 +800,12 @@ ${label}
               <div class="record-field"><b>性別</b><span>${esc(SEX_LABEL[cat.sex] || "不明")}</span></div>
               <div class="record-field"><b>保護日</b><span>${esc(formatDate(cat.rescued_date))}</span></div>
               <div class="record-field"><b>品種等</b><span>${esc(cat.breed || "")}</span></div>
-              <div class="record-field"><b>保護時年齢・生まれ（推定）</b><span>${esc(cat.estimated_age_text || formatDate(cat.estimated_birth_date) || "")}</span></div>
+              <div class="record-field record-age"><b>保護時年齢・生まれ（推定）</b><span>${esc(cat.estimated_age_text || formatDate(cat.estimated_birth_date) || "")}</span></div>
               <div class="record-field"><b>ワクチン</b><span>${vaccine ? `${esc(vaccine.vaccine_type || "接種済")} ${esc(formatDate(vaccine.vaccination_date))}` : ""}</span></div>
               <div class="record-field"><b>不妊去勢手術日</b><span>${surgery ? esc(formatDate(surgery.surgery_date)) : ""}</span></div>
               <div class="record-field"><b>ウイルス検査日</b><span>${test ? esc(formatDate(test.test_date)) : ""}</span></div>
-              <div class="record-field"><b>FIV</b><span class="record-virus-options"><span>${test && test.fiv_result === "positive" ? "〇" : "　"} ＋</span><span>${test && test.fiv_result === "negative" ? "〇" : "　"} −</span></span></div>
-              <div class="record-field"><b>FeLV</b><span class="record-virus-options"><span>${test && test.felv_result === "positive" ? "〇" : "　"} ＋</span><span>${test && test.felv_result === "negative" ? "〇" : "　"} −</span></span></div>
+              <div class="record-field"><b>FIV</b><span class="record-virus-options"><span class="${test && test.fiv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test && test.fiv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
+              <div class="record-field"><b>FeLV</b><span class="record-virus-options"><span class="${test && test.felv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test && test.felv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
             </div>
           </div>
           <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
