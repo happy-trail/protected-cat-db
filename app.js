@@ -211,7 +211,7 @@ ${label}
   async function loadCats() {
     const { data, error } = await state.supabase
       .from("cats")
-      .select("id,management_no,name,sex,breed,rescued_date,estimated_age_text,status,rescue_location,main_photo_file_id")
+      .select("id,management_no,name,sex,breed,rescued_date,estimated_age_text,status,main_photo_file_id")
       .is("deleted_at", null)
       .order("management_no", { ascending: true });
     if (error) {
@@ -227,7 +227,7 @@ ${label}
     const q = $("search-input").value.trim().toLowerCase();
     const status = $("status-filter").value;
     return state.cats.filter(cat => {
-      const hay = `${cat.management_no} ${cat.name} ${cat.breed} ${cat.rescue_location}`.toLowerCase();
+      const hay = `${cat.management_no} ${cat.name} ${cat.breed}`.toLowerCase();
       return (!q || hay.includes(q)) && (!status || cat.status === status);
     });
   }
@@ -263,13 +263,12 @@ ${label}
       .single();
     if (error) return toast(error.message);
 
-    const [vaccinations, virusTests, surgeries, observations, transfers, deaths, files] = await Promise.all([
+    const [vaccinations, virusTests, surgeries, observations, transfers, files] = await Promise.all([
       state.supabase.from("vaccinations").select("*").eq("cat_id", id).order("vaccination_date", {ascending:false}),
       state.supabase.from("virus_tests").select("*").eq("cat_id", id).order("test_date", {ascending:false}),
       state.supabase.from("surgeries").select("*").eq("cat_id", id).order("surgery_date", {ascending:false}),
       state.supabase.from("observations").select("*").eq("cat_id", id).order("observation_date", {ascending:false}).order("created_at", {ascending:false}),
       state.supabase.from("transfers").select("*").eq("cat_id", id).order("transfer_date", {ascending:false}),
-      state.supabase.from("deaths").select("*").eq("cat_id", id).order("death_date", {ascending:false}),
       state.supabase.from("cat_files").select("*").eq("cat_id", id).order("is_main_photo", {ascending:false}).order("taken_at", {ascending:false})
     ]);
 
@@ -280,7 +279,6 @@ ${label}
       surgeries: surgeries.data || [],
       observations: observations.data || [],
       transfers: transfers.data || [],
-      deaths: deaths.data || [],
       files: files.data || []
     };
     renderDetail();
@@ -341,7 +339,6 @@ ${label}
             <div class="key">品種等</div><div>${esc(c.breed || "—")}</div>
             <div class="key">保護日</div><div>${esc(formatDate(c.rescued_date))}</div>
             <div class="key">推定年齢</div><div>${esc(c.estimated_age_text || "—")}</div>
-            <div class="key">保護場所</div><div>${esc(c.rescue_location || "—")}</div>
             <div class="key">不妊・去勢</div><div>${esc(NEUTER_LABEL[c.neuter_status])}</div>
             <div class="key">ワクチン</div><div>${vaccine ? `${esc(vaccine.vaccine_type)} / ${esc(formatDate(vaccine.vaccination_date))}` : "—"}</div>
             <div class="key">FIV</div><div>${test ? esc(TEST_LABEL[test.fiv_result]) : "—"}</div>
@@ -350,9 +347,6 @@ ${label}
           </div>
         </div>
       </div>
-
-      <h3 class="section-title">保護時の状況</h3>
-      <div class="panel">${esc(c.rescue_details || "未登録")}</div>
 
       <h3 class="section-title">観察日記
         ${canEdit() ? '<button id="add-observation" class="primary" type="button">＋ 追加</button>' : ""}
@@ -383,7 +377,6 @@ ${label}
       <h3 class="section-title">譲渡・死亡情報</h3>
       <div class="info-grid">
         <div class="key">譲渡</div><div>${c.transfers.length ? esc(formatDate(c.transfers[0].transfer_date)) : "未登録"}</div>
-        <div class="key">死亡</div><div>${c.deaths.length ? `${esc(formatDate(c.deaths[0].death_date))} / ${esc(c.deaths[0].cause || "原因未登録")}` : "—"}</div>
       </div>
       ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
@@ -436,15 +429,7 @@ ${label}
     $("estimated-birth-date").value = cat?.estimated_birth_date || "";
     $("estimated-age").value = cat?.estimated_age_text || "";
     $("cat-status").value = cat?.status || "protected";
-    const death = cat?.deaths?.[0] || null;
-    $("death-date").value = death?.death_date || cat?.death_date || today();
-    $("death-cause").value = death?.cause || "";
-    $("death-hospital").value = death?.veterinary_hospital || "";
-    $("death-note").value = death?.note || "";
-    $("death-fields").classList.toggle("hidden", $("cat-status").value !== "deceased");
     $("neuter-status").value = cat?.neuter_status || "unknown";
-    $("rescue-location").value = cat?.rescue_location || "";
-    $("rescue-details").value = cat?.rescue_details || "";
     $("current-note").value = cat?.current_note || "";
     message("cat-form-message","");
     panel("cat-form-panel");
@@ -456,12 +441,6 @@ ${label}
 
     const id = $("cat-id").value || null;
     const desiredStatus = $("cat-status").value;
-    if (desiredStatus === "deceased" && !id) {
-      return message("cat-form-message", "先に猫を「保護中」などで登録してから、編集画面で死亡記録を登録してください。", "error");
-    }
-    if (id && state.selectedCat?.status === "deceased" && desiredStatus !== "deceased") {
-      return message("cat-form-message", "死亡記録がある猫の状態変更は、記録の整合性を保つため現在この画面ではできません。管理者に相談してください。", "error");
-    }
     const payload = {
       management_no: $("management-no").value.trim() || null,
       name: $("cat-name").value.trim(),
@@ -472,8 +451,6 @@ ${label}
       estimated_age_text: $("estimated-age").value.trim(),
       status: desiredStatus === "deceased" ? "deceased" : desiredStatus,
       neuter_status: $("neuter-status").value,
-      rescue_location: $("rescue-location").value.trim(),
-      rescue_details: $("rescue-details").value.trim(),
       current_note: $("current-note").value.trim(),
       updated_by: state.user.id
     };
@@ -481,24 +458,7 @@ ${label}
     if (!payload.name) return message("cat-form-message","名前を入力してください。","error");
 
     let result;
-    if (id && desiredStatus === "deceased") {
-      const deathDate = $("death-date").value;
-      if (!deathDate) return message("cat-form-message", "死亡日を入力してください。", "error");
-      // 先に通常項目だけ保存。死亡処理が失敗しても、状態だけ死亡に変わらないようにする。
-      const remaining = { ...payload };
-      remaining.status = state.selectedCat?.status || "protected";
-      const catSave = await state.supabase.from("cats").update(remaining).eq("id", id).select().single();
-      if (catSave.error) return message("cat-form-message", catSave.error.message, "error");
-      result = await state.supabase.rpc("record_cat_death", {
-        p_cat_id: id,
-        p_death_date: deathDate,
-        p_cause: $("death-cause").value.trim(),
-        p_veterinary_hospital: $("death-hospital").value.trim(),
-        p_note: $("death-note").value.trim()
-      });
-      if (result.error) return message("cat-form-message", "猫の基本情報は保存しましたが、死亡記録の保存に失敗しました：" + result.error.message, "error");
-      result = catSave;
-    } else if (id) {
+    if (id) {
       result = await state.supabase.from("cats").update(payload).eq("id", id).select().single();
     } else {
       payload.created_by = state.user.id;
@@ -791,9 +751,8 @@ ${label}
       ].filter(Boolean);
       return parts.join(" / ");
     }).join("\n");
-    const death = latest(cat.deaths);
     const transfer = latest(cat.transfers);
-    const diary = [cat.rescue_details || "", observationText].filter(Boolean).join("\n\n");
+    const diary = observationText;
     return `
       <section class="individual-record">
         <div class="record-left">
@@ -813,9 +772,8 @@ ${label}
               <div class="record-field"><b>FeLV</b><span>${test ? esc(TEST_LABEL[test.felv_result] || "") : ""}</span></div>
             </div>
           </div>
-          <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
+          <div class="record-diary-title">観察日記（保護時の状況・死亡日なども記録）</div>
           <div class="record-diary">${esc(diary)}</div>
-          <div class="record-death">（死亡した場合は死亡日、原因） ${death ? `${esc(formatDate(death.death_date))}　${esc(death.cause || "")}${death.veterinary_hospital ? `　病院：${esc(death.veterinary_hospital)}` : ""}${death.note ? `　${esc(death.note)}` : ""}` : ""}</div>
         </div>
         <div class="record-right">
           <div class="record-adoption">
@@ -916,11 +874,6 @@ ${label}
     $("cancel-cat-button").addEventListener("click", () => panel("detail-panel"));
     $("cancel-cat-button-2").addEventListener("click", () => panel("detail-panel"));
     $("cat-form").addEventListener("submit", saveCat);
-    $("cat-status").addEventListener("change", () => {
-      const isDeceased = $("cat-status").value === "deceased";
-      $("death-fields").classList.toggle("hidden", !isDeceased);
-      if (isDeceased && !$("death-date").value) $("death-date").value = today();
-    });
     $("back-to-detail-button").addEventListener("click", () => panel("detail-panel"));
     $("cancel-observation-button").addEventListener("click", () => panel("detail-panel"));
     $("observation-form").addEventListener("submit", saveObservation);
