@@ -764,9 +764,8 @@ ${label}
     const photo = photoUrl
       ? `<img class="record-photo" src="${esc(photoUrl)}" alt="${esc(cat.name || "保護猫")}の写真">`
       : `<div class="record-photo record-photo-empty">写真未登録</div>`;
-    const observationText = (cat.observations || []).slice().reverse().map(o => {
+    const diaryRows = (cat.observations || []).slice().reverse().map(o => {
       const parts = [
-        formatDate(o.observation_date),
         o.condition ? `体調：${o.condition}` : "",
         o.appetite ? `食欲：${o.appetite}` : "",
         o.stool ? `排便：${o.stool}` : "",
@@ -783,10 +782,10 @@ ${label}
         o.death_note ? `死亡時メモ：${o.death_note}` : "",
         o.memo || ""
       ].filter(Boolean);
-      return parts.join(" / ");
-    }).join("\n");
+      return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
+    }).join("");
     const transfer = latest(cat.transfers);
-    const diary = observationText;
+    const diary = diaryRows || '<div class="record-diary-empty"></div>';
     return `
       <section class="individual-record">
         <div class="record-left">
@@ -796,7 +795,7 @@ ${label}
               <div class="record-photo-frame">${photo}</div>
             </div>
             <div class="record-facts">
-              <div class="record-title-row"><span>管理番号</span><b>${esc(cat.management_no || "")}</b></div>
+              <div class="record-field record-management"><b>管理番号</b><span>${esc(cat.management_no || "")}</span></div>
               <div class="record-field"><b>名前</b><span>${esc(cat.name || "")}</span></div>
               <div class="record-field"><b>性別</b><span>${esc(SEX_LABEL[cat.sex] || "不明")}</span></div>
               <div class="record-field"><b>保護日</b><span>${esc(formatDate(cat.rescued_date))}</span></div>
@@ -805,12 +804,12 @@ ${label}
               <div class="record-field"><b>ワクチン</b><span>${vaccine ? `${esc(vaccine.vaccine_type || "接種済")} ${esc(formatDate(vaccine.vaccination_date))}` : ""}</span></div>
               <div class="record-field"><b>不妊去勢手術日</b><span>${surgery ? esc(formatDate(surgery.surgery_date)) : ""}</span></div>
               <div class="record-field"><b>ウイルス検査日</b><span>${test ? esc(formatDate(test.test_date)) : ""}</span></div>
-              <div class="record-field"><b>FIV</b><span>${test ? esc(TEST_LABEL[test.fiv_result] || "") : ""}</span></div>
-              <div class="record-field"><b>FeLV</b><span>${test ? esc(TEST_LABEL[test.felv_result] || "") : ""}</span></div>
+              <div class="record-field"><b>FIV</b><span class="record-virus-options"><span>${test && test.fiv_result === "positive" ? "〇" : "　"} ＋</span><span>${test && test.fiv_result === "negative" ? "〇" : "　"} −</span></span></div>
+              <div class="record-field"><b>FeLV</b><span class="record-virus-options"><span>${test && test.felv_result === "positive" ? "〇" : "　"} ＋</span><span>${test && test.felv_result === "negative" ? "〇" : "　"} −</span></span></div>
             </div>
           </div>
           <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
-          <div class="record-diary">${esc(diary)}</div>
+          <div class="record-diary">${diary}</div>
         </div>
         <div class="record-right">
           <div class="record-adoption">

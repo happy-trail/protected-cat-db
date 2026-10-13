@@ -170,14 +170,18 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-photo { display:block; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; object-position:center; }
 .record-photo-empty { display:grid; place-items:center; color:#777; background:#fafafa; width:100%; height:100%; }
 .record-facts { min-width:0; min-height:0; display:flex; flex-direction:column; }
-.record-title-row { display:grid; grid-template-columns:35% 65%; min-height:9mm; border-bottom:1px solid #222; align-items:center; text-align:center; }
-.record-title-row > * { padding:1.2mm; border-right:1px solid #222; }
-.record-title-row > *:last-child { border-right:0; }
 .record-field { display:grid; grid-template-columns:48% 52%; flex:1; min-height:0; border-bottom:1px solid #555; }
 .record-field b,.record-field span { padding:1mm 1.3mm; display:flex; align-items:center; overflow-wrap:anywhere; }
 .record-field b { border-right:1px solid #555; font-weight:600; }
+.record-management { flex:0 0 9mm; }
+.record-virus-options { display:flex; align-items:center; justify-content:space-around; width:100%; }
+.record-virus-options > span { white-space:pre; }
 .record-diary-title,.record-continuation-title { padding:1.8mm 2mm; font-weight:700; border-top:1px solid #222; border-bottom:1px solid #222; min-height:8mm; }
-.record-diary { padding:1.5mm 2mm; white-space:pre-wrap; overflow:hidden; flex:1; min-height:0; line-height:7mm; background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); background-position:left top; }
+.record-diary { overflow:hidden; flex:1; min-height:0; display:flex; flex-direction:column; }
+.record-diary-row { display:grid; grid-template-columns:25mm minmax(0,1fr); min-height:7mm; flex:0 0 7mm; border-bottom:1px solid #aaa; }
+.record-diary-date { padding:1mm 1.5mm; border-right:1px solid #777; display:flex; align-items:center; white-space:nowrap; font-size:7.5pt; }
+.record-diary-content { padding:1mm 1.5mm; overflow:hidden; overflow-wrap:anywhere; display:block; }
+.record-diary-empty { flex:1; background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); }
 .record-death { border-top:1px solid #222; padding:1.5mm 2mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; }
 .record-right { position:relative; }
 .record-adoption { height:62mm; min-height:62mm; border-bottom:1px solid #222; }
