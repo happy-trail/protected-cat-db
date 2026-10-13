@@ -169,7 +169,7 @@ ${label}
 
   async function deleteCatPhoto(fileId) {
     const cat = state.selectedCat;
-    if (!cat || !isAdmin()) return toast("写真の削除は管理者のみ実行できます。");
+    if (!cat || !canEdit()) return toast("写真の削除はスタッフ・管理者のみ実行できます。");
     const file = cat.files.find(f => f.id === fileId);
     if (!file) return toast("写真情報が見つかりません。");
     if (!window.confirm(`写真「${file.file_name || "名称未設定"}」をGoogle Driveとデータベースから削除します。
@@ -733,7 +733,7 @@ ${label}
       <div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}">
         <div class="photo-loading">📷</div>
         <small>${esc(f.file_name)}</small>
-        ${isAdmin() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}
+        ${canEdit() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}
       </div>
     `).join("");
     box.querySelectorAll("[data-drive-file-id]").forEach(async card => {
