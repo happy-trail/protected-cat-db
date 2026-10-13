@@ -161,7 +161,9 @@ ${label}
       panel("list-panel");
       toast("猫を一覧から削除しました（記録は保持されています）。");
     } catch (e) {
-      toast(`猫を削除できませんでした：${e.message || e}`);
+      console.error("猫の論理削除に失敗しました", e);
+      const detail = [e.message, e.code ? `code=${e.code}` : "", e.details, e.hint].filter(Boolean).join(" / ");
+      toast(`猫を削除できませんでした：${detail || String(e)}`);
     }
   }
 
@@ -376,14 +378,7 @@ ${label}
         ${(!c.vaccinations.length && !c.virusTests.length && !c.surgeries.length) ? '<div class="empty">医療履歴はありません。</div>' : ""}
       </div>
 
-      ${canEdit() ? `
-      <h3 class="section-title">Google Drive / 写真</h3>
-      <div class="drive-box">
-        <p>v1ではGoogle Driveのファイル情報をDBに保存する設計です。Drive OAuth・アップロードUIは次フェーズで接続します。</p>
-        <div class="file-grid">
-          ${c.files.map(f => `<div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}"><div class="photo-loading">📷</div><small>${esc(f.file_name)}</small>${isAdmin() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}</div>`).join("")}
-        </div>
-      </div>` : ""}
+      <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
       <h3 class="section-title">譲渡・死亡情報</h3>
       <div class="info-grid">
