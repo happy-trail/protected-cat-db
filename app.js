@@ -152,9 +152,9 @@ ${label}
 記録は完全消去せず、非表示にします。続けますか？`);
     if (!ok) return;
     try {
-      const { error } = await state.supabase.from("cats")
-        .update({ deleted_at: new Date().toISOString(), updated_by: state.user.id })
-        .eq("id", cat.id).is("deleted_at", null);
+      const { error } = await state.supabase.rpc("soft_delete_cat", {
+        p_cat_id: cat.id
+      });
       if (error) throw error;
       state.selectedCat = null;
       await loadCats();
