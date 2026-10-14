@@ -369,7 +369,7 @@ ${label}
             ${o.death_cause ? `<div><strong>死因：</strong>${esc(o.death_cause)}</div>` : ""}
             ${o.veterinary_hospital ? `<div><strong>動物病院：</strong>${esc(o.veterinary_hospital)}</div>` : ""}
             ${o.death_note ? `<div><strong>死亡時メモ：</strong>${esc(o.death_note)}</div>` : ""}
-            ${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-observation-button" data-id="${esc(o.id)}">編集</button>${isAdmin() ? `<button type="button" class="danger delete-observation-button" data-id="${esc(o.id)}">削除</button>` : ""}</div>` : ""}
+            ${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-observation-button" data-id="${esc(o.id)}">編集</button>${canEdit() ? `<button type="button" class="danger delete-observation-button" data-id="${esc(o.id)}">削除</button>` : ""}</div>` : ""}
           </div>
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
@@ -576,7 +576,7 @@ ${label}
   }
 
   async function deleteObservation(id) {
-    if (!state.selectedCat || !isAdmin()) return toast("観察日記の削除は管理者のみ実行できます。");
+    if (!state.selectedCat || !canEdit()) return toast("観察日記の削除はスタッフまたは管理者のみ実行できます。");
     const record = state.selectedCat.observations.find(o => String(o.id) === String(id));
     if (!record || !window.confirm(`${formatDate(record.observation_date)} の観察日記を削除しますか？この操作は元に戻せません。`)) return;
     const { error } = await state.supabase.from("observations").delete().eq("id", id).eq("cat_id", state.selectedCat.id);
