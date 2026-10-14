@@ -180,12 +180,12 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-virus-options > span.virus-selected::after { content:""; position:absolute; width:5.2mm; height:5.2mm; border:0.45mm solid #111; border-radius:50%; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; }
 .record-diary-title,.record-continuation-title { padding:1.8mm 2mm; font-weight:700; text-align:center; border-top:1px solid #222; border-bottom:1px solid #222; min-height:8mm; }
 .record-diary { overflow:hidden; flex:1; min-height:0; display:flex; flex-direction:column; position:relative; }
-.record-diary-row { display:grid; grid-template-columns:18mm minmax(0,1fr); min-height:7mm; flex:0 0 auto; border-bottom:1px solid #aaa; align-items:stretch; }
+.record-diary-row { display:grid; grid-template-columns:18mm minmax(0,1fr); min-height:7mm; flex:0 0 auto; border-bottom:0; align-items:stretch; }
 .record-diary-date { padding:1mm 1.5mm; border-right:1px solid #777; display:flex; align-items:center; white-space:nowrap; font-size:7.5pt; }
 .record-diary-content { padding:1.2mm 1.5mm; overflow:visible; overflow-wrap:anywhere; white-space:normal; display:block; min-width:0; }
 .record-diary-empty { position:absolute; inset:0; z-index:0; min-height:0; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm), #aaa calc(7mm - .2mm), #aaa 7mm); pointer-events:none; }
 .record-diary-row { position:relative; z-index:1; background:transparent; }
-.record-death { display:flex; align-items:center; flex:0 0 9mm; height:9mm; box-sizing:border-box; border-top:1px solid #222; padding:1.5mm 2mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; position:relative; z-index:2; background:#fff; }
+.record-death { display:flex; align-items:center; flex:0 0 9mm; height:9mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm 1.5mm 20mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .record-right { position:relative; }
 .record-adoption { height:34mm; min-height:34mm; flex:0 0 34mm; border-bottom:1px solid #222; }
 .record-adoption-title { padding:2mm; min-height:9mm; font-weight:700; border-bottom:1px solid #222; }
@@ -193,12 +193,12 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-adoption-content > div { display:grid; grid-template-columns:20mm 1fr; min-height:6mm; border-bottom:1px solid #aaa; }
 .record-adoption-content b { font-weight:600; }
 .record-continuation { flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column; position:relative; }
-.record-continuation-lines { position:absolute; inset:0; z-index:0; min-height:0; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); pointer-events:none; }
+.record-continuation-lines { position:absolute; left:0; right:0; top:0; bottom:-8mm; z-index:0; min-height:0; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); pointer-events:none; }
 .record-continuation .record-diary-row { flex:0 0 auto; z-index:1; background:transparent; }
 .record-continuation .record-diary-content { overflow-wrap:anywhere; white-space:normal; }
 .record-continuation:not(.has-diary-continuation) { border-top:1px solid #222; }
 .record-continuation.has-diary-continuation { border-top:1px solid #222; }
-.record-bottom-number { display:flex; align-items:center; justify-content:flex-end; flex:0 0 8mm; height:8mm; box-sizing:border-box; border-top:1px solid #222; padding:1.5mm 2mm; min-height:8mm; text-align:right; position:relative; z-index:2; background:#fff; }
+.record-bottom-number { display:flex; align-items:center; justify-content:flex-end; flex:0 0 8mm; height:8mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm; min-height:8mm; text-align:right; position:relative; z-index:2; background:transparent; }
 .health-actions { display:flex; gap:12px; align-items:center; margin:8px auto; max-width:281mm; font-size:14px; }
 @media print {
   @page { size:A4 landscape; margin:0; }
