@@ -191,11 +191,15 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-adoption-content { padding:3mm; display:grid; gap:5mm; }
 .record-adoption-content > div { display:grid; grid-template-columns:20mm 1fr; min-height:8mm; border-bottom:1px solid #aaa; }
 .record-adoption-content b { font-weight:600; }
-.record-continuation { flex:1; min-height:0; background:repeating-linear-gradient(to bottom,transparent 0,transparent 8mm,#bbb 8mm,#bbb 8.2mm); }
+.record-continuation { flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+.record-continuation .record-diary-row { flex:0 0 auto; }
+.record-continuation .record-diary-content { overflow-wrap:anywhere; white-space:normal; }
+.record-continuation:not(.has-diary-continuation) { display:none; }
+.record-continuation.has-diary-continuation { border-top:1px solid #222; }
 .record-bottom-number { border-top:1px solid #222; padding:1.5mm 2mm; min-height:8mm; }
 .health-actions { display:flex; gap:12px; align-items:center; margin:8px auto; max-width:281mm; font-size:14px; }
 @media print {
-  @page { size:A4 landscape; margin:8mm; }
+  @page { size:A4 landscape; margin:0; }
   html,body { width:281mm !important; height:194mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
   .health-actions { display:none !important; }
   .individual-record { width:281mm; height:194mm; margin:0; break-inside:avoid; page-break-inside:avoid; }

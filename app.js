@@ -819,7 +819,7 @@ ${label}
               <div><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
             </div>
           </div>
-          <div class="record-continuation" aria-label="記入欄"></div>
+          <div class="record-continuation" aria-label="観察日記の続き"></div>
           <div class="record-bottom-number">管理番号：${esc(cat.management_no || "")}</div>
         </div>
       </section>
@@ -860,6 +860,29 @@ ${label}
       if (printWindow.document.readyState === "complete") resolve();
       else printWindow.addEventListener("load", resolve, { once: true });
     });
+    await new Promise(resolve => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
+
+    // Move whole diary rows that do not fit in the left diary area into the
+    // continuation area below the adoption/rescue record on the right.
+    // If there is no overflow, leave that area empty (no decorative blank lines).
+    const diary = printWindow.document.querySelector(".record-diary");
+    const continuation = printWindow.document.querySelector(".record-continuation");
+    if (diary && continuation) {
+      const rows = Array.from(diary.querySelectorAll(".record-diary-row"));
+      const available = diary.clientHeight;
+      let used = 0;
+      for (const row of rows) {
+        const rowHeight = row.getBoundingClientRect().height;
+        if (used + rowHeight <= available + 1) {
+          used += rowHeight;
+        } else {
+          continuation.appendChild(row);
+        }
+      }
+      if (continuation.querySelector(".record-diary-row")) {
+        continuation.classList.add("has-diary-continuation");
+      }
+    }
     await new Promise(resolve => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
     printWindow.focus();
     printWindow.print();
