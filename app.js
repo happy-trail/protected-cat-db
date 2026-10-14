@@ -785,7 +785,7 @@ ${label}
       return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
     }).join("");
     const transfer = latest(cat.transfers);
-    const diary = diaryRows || '<div class="record-diary-empty"></div>';
+    const diary = `${diaryRows}<div class="record-diary-empty" aria-hidden="true"></div>`;
     return `
       <section class="individual-record">
         <div class="record-left">
@@ -810,6 +810,7 @@ ${label}
           </div>
           <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
           <div class="record-diary">${diary}</div>
+          <div class="record-death">（死亡した場合は死亡日、原因）</div>
         </div>
         <div class="record-right">
           <div class="record-adoption">
@@ -819,8 +820,8 @@ ${label}
               <div><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
             </div>
           </div>
-          <div class="record-continuation" aria-label="観察日記の続き"></div>
-          <div class="record-bottom-number">管理番号：${esc(cat.management_no || "")}</div>
+          <div class="record-continuation" aria-label="観察日記の記入欄"><div class="record-continuation-lines" aria-hidden="true"></div></div>
+          <div class="record-bottom-number">${esc(cat.management_no || "")}</div>
         </div>
       </section>
     `;
@@ -876,7 +877,7 @@ ${label}
         if (used + rowHeight <= available + 1) {
           used += rowHeight;
         } else {
-          continuation.appendChild(row);
+          continuation.insertBefore(row, continuation.querySelector(".record-continuation-lines"));
         }
       }
       if (continuation.querySelector(".record-diary-row")) {
