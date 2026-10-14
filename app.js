@@ -814,7 +814,6 @@ ${label}
         </div>
         <div class="record-right">
           <div class="record-adoption">
-            <div class="record-adoption-title">譲渡記録</div>
             <div class="record-adoption-content">
               <div><b>譲渡日</b><span>${transfer ? esc(formatDate(transfer.transfer_date)) : ""}</span></div>
               <div><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
