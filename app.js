@@ -342,6 +342,8 @@ ${label}
             <div class="key">FIV</div><div>${esc(TEST_LABEL[test.fiv_result] || "—")}${test.virus_test_date ? `（${esc(formatDate(test.virus_test_date))}）` : ""}</div>
             <div class="key">FeLV</div><div>${esc(TEST_LABEL[test.felv_result] || "—")}</div>
             <div class="key">不妊去勢手術日</div><div>${surgery.surgery_date ? esc(formatDate(surgery.surgery_date)) : "—"}</div>
+            <div class="key">譲渡日</div><div>${c.transfer_date ? esc(formatDate(c.transfer_date)) : "—"}</div>
+            <div class="key">譲渡先</div><div>${esc(c.transfer_recipient || "—")}</div>
           </div>
         </div>
       </div>
@@ -370,25 +372,10 @@ ${label}
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
 
-      <h3 class="section-title">医療情報</h3>
-      <div class="info-grid medical-main-table">
-        <div class="key">ワクチン</div><div>${esc(c.vaccine_type || "—")} ${c.vaccination_date ? `／ ${esc(formatDate(c.vaccination_date))}` : ""}</div>
-        <div class="key">ウイルス検査日</div><div>${esc(formatDate(c.virus_test_date) || "—")}</div>
-        <div class="key">FIV</div><div>${esc(TEST_LABEL[c.fiv_result] || "—")}</div>
-        <div class="key">FeLV</div><div>${esc(TEST_LABEL[c.felv_result] || "—")}</div>
-        <div class="key">不妊去勢手術日</div><div>${c.surgery_date ? esc(formatDate(c.surgery_date)) : "—"}</div>
-        ${c.medical_hospital ? `<div class="key">動物病院</div><div>${esc(c.medical_hospital)}</div>` : ""}
-        ${c.medical_note ? `<div class="key">医療メモ</div><div>${esc(c.medical_note)}</div>` : ""}
-      </div>
-      <p class="muted">医療情報は猫のメイン情報に保存されます。</p>
+      <!-- 医療情報は上部の基本情報一覧に表示済みのため、ここでは重複表示しない。 -->
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
-      <h3 class="section-title">譲渡情報</h3>
-      <div class="info-grid">
-        <div class="key">譲渡日</div><div>${c.transfer_date ? esc(formatDate(c.transfer_date)) : "—"}</div>
-        <div class="key">譲渡先</div><div>${esc(c.transfer_recipient || "—")}</div>
-      </div>
       ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
     const photoCards = document.querySelectorAll("[data-drive-file-id]");
