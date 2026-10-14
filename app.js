@@ -785,7 +785,7 @@ ${label}
       return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
     }).join("");
     const transfer = latest(cat.transfers);
-    const diary = `${diaryRows}<div class="record-diary-empty" aria-hidden="true"></div>`;
+    const diary = `<div class="record-diary-empty" aria-hidden="true"></div>${diaryRows}`;
     return `
       <section class="individual-record">
         <div class="record-left">
