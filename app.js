@@ -342,7 +342,7 @@ ${label}
             <div class="key">ワクチン</div><div>${vaccine.vaccine_type ? `${esc(vaccine.vaccine_type)} / ${esc(formatDate(vaccine.vaccination_date))}` : "—"}</div>
             <div class="key">FIV</div><div>${esc(TEST_LABEL[test.fiv_result] || "—")}${test.virus_test_date ? `（${esc(formatDate(test.virus_test_date))}）` : ""}</div>
             <div class="key">FeLV</div><div>${esc(TEST_LABEL[test.felv_result] || "—")}</div>
-            <div class="key">手術</div><div>${surgery.surgery_type ? `${esc(surgery.surgery_type)} / ${esc(formatDate(surgery.surgery_date))}` : "—"}</div>
+            <div class="key">不妊去勢手術日</div><div>${surgery.surgery_date ? esc(formatDate(surgery.surgery_date)) : "—"}</div>
           </div>
         </div>
       </div>
@@ -377,7 +377,7 @@ ${label}
         <div class="key">ウイルス検査日</div><div>${esc(formatDate(c.virus_test_date) || "—")}</div>
         <div class="key">FIV</div><div>${esc(TEST_LABEL[c.fiv_result] || "—")}</div>
         <div class="key">FeLV</div><div>${esc(TEST_LABEL[c.felv_result] || "—")}</div>
-        <div class="key">手術</div><div>${esc(c.surgery_type || "—")} ${c.surgery_date ? `／ ${esc(formatDate(c.surgery_date))}` : ""}</div>
+        <div class="key">不妊去勢手術日</div><div>${c.surgery_date ? esc(formatDate(c.surgery_date)) : "—"}</div>
         ${c.medical_hospital ? `<div class="key">動物病院</div><div>${esc(c.medical_hospital)}</div>` : ""}
         ${c.medical_note ? `<div class="key">医療メモ</div><div>${esc(c.medical_note)}</div>` : ""}
       </div>
@@ -467,7 +467,6 @@ ${label}
     $("cat-fiv-result").value = cat?.fiv_result || "unknown";
     $("cat-felv-result").value = cat?.felv_result || "unknown";
     $("cat-surgery-date").value = cat?.surgery_date || "";
-    $("cat-surgery-type").value = cat?.surgery_type || "";
     $("cat-medical-hospital").value = cat?.medical_hospital || "";
     $("cat-medical-note").value = cat?.medical_note || "";
     message("cat-form-message","");
@@ -497,7 +496,6 @@ ${label}
       fiv_result: $("cat-fiv-result").value,
       felv_result: $("cat-felv-result").value,
       surgery_date: $("cat-surgery-date").value || null,
-      surgery_type: $("cat-surgery-type").value.trim(),
       medical_hospital: $("cat-medical-hospital").value.trim(),
       medical_note: $("cat-medical-note").value.trim(),
       updated_by: state.user.id
