@@ -14,6 +14,8 @@
     cats: [],
     selectedCat: null,
     editing: false,
+    editingObservationId: null,
+    editingTransferId: null,
     deferredInstall: null,
     googleToken: null,
     googleTokenClient: null
@@ -367,6 +369,7 @@ ${label}
             ${o.death_cause ? `<div><strong>死因：</strong>${esc(o.death_cause)}</div>` : ""}
             ${o.veterinary_hospital ? `<div><strong>動物病院：</strong>${esc(o.veterinary_hospital)}</div>` : ""}
             ${o.death_note ? `<div><strong>死亡時メモ：</strong>${esc(o.death_note)}</div>` : ""}
+            ${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-observation-button" data-id="${esc(o.id)}">編集</button>${isAdmin() ? `<button type="button" class="danger delete-observation-button" data-id="${esc(o.id)}">削除</button>` : ""}</div>` : ""}
           </div>
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
@@ -381,8 +384,11 @@ ${label}
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
-      <h3 class="section-title">譲渡情報</h3>
-      <div class="info-grid"><div class="key">譲渡</div><div>${c.transfers.length ? esc(formatDate(c.transfers[0].transfer_date)) : "未登録"}</div></div>
+      <h3 class="section-title">譲渡情報 ${canEdit() ? '<button id="new-transfer-button" class="primary" type="button">＋ 譲渡情報を入力</button>' : ""}</h3>
+      <div class="transfer-list">
+        ${c.transfers.length ? c.transfers.map(t => `<div class="timeline-item transfer-item"><div><strong>譲渡日：</strong>${esc(formatDate(t.transfer_date))}</div><div><strong>譲渡先：</strong>${esc(t.recipient_name || "—")}</div>${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-transfer-button" data-id="${esc(t.id)}">編集</button>${isAdmin() ? `<button type="button" class="danger delete-transfer-button" data-id="${esc(t.id)}">削除</button>` : ""}</div>` : ""}</div>`).join("") : '<div class="empty">譲渡情報はまだありません。</div>'}
+      </div>
+      ${canEdit() ? `<form id="transfer-form" class="form-grid compact-form"><input type="hidden" id="transfer-id"><label>譲渡日<input id="transfer-date" type="date" required></label><label>譲渡先<input id="transfer-recipient" maxlength="200" placeholder="譲渡先の氏名・団体名"></label><div class="form-actions full"><button class="primary" type="submit" id="transfer-save-button">譲渡情報を保存</button><button class="secondary hidden" id="transfer-cancel-edit" type="button">編集をキャンセル</button></div><p id="transfer-message" class="message full" aria-live="polite"></p></form>` : ""}
       ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
     const photoCards = document.querySelectorAll("[data-drive-file-id]");
@@ -414,7 +420,23 @@ ${label}
       }
     });
     const add = $("add-observation");
-    if (add) add.addEventListener("click", openObservationForm);
+    if (add) add.addEventListener("click", () => openObservationForm());
+    document.querySelectorAll(".edit-observation-button").forEach(btn => btn.addEventListener("click", () => {
+      const record = state.selectedCat?.observations.find(o => String(o.id) === btn.dataset.id);
+      if (record) openObservationForm(record);
+    }));
+    document.querySelectorAll(".delete-observation-button").forEach(btn => btn.addEventListener("click", () => deleteObservation(btn.dataset.id)));
+    const transferForm = $("transfer-form");
+    if (transferForm) transferForm.addEventListener("submit", saveTransfer);
+    const newTransfer = $("new-transfer-button");
+    if (newTransfer) newTransfer.addEventListener("click", () => resetTransferForm());
+    document.querySelectorAll(".edit-transfer-button").forEach(btn => btn.addEventListener("click", () => {
+      const record = state.selectedCat?.transfers.find(t => String(t.id) === btn.dataset.id);
+      if (record) editTransferForm(record);
+    }));
+    document.querySelectorAll(".delete-transfer-button").forEach(btn => btn.addEventListener("click", () => deleteTransfer(btn.dataset.id)));
+    const cancelTransferEdit = $("transfer-cancel-edit");
+    if (cancelTransferEdit) cancelTransferEdit.addEventListener("click", resetTransferForm);
     const deleteCatButton = $("delete-cat-button");
     if (deleteCatButton) deleteCatButton.addEventListener("click", deleteCatRecord);
     document.querySelectorAll(".photo-delete-button").forEach(btn => {
@@ -476,13 +498,31 @@ ${label}
     await openCat(result.data.id);
   }
 
-  function openObservationForm() {
+  function openObservationForm(observation=null) {
     if (!state.selectedCat || !canEdit()) return;
-    $("obs-date").value = today();
-    $("obs-entry-type").value = "daily";
+    state.editingObservationId = observation?.id || null;
+    const formTitle = document.querySelector("#observation-panel .detail-head h2");
+    if (formTitle) formTitle.textContent = observation ? "観察日記を編集" : "観察日記を追加";
+    $("obs-date").value = observation?.observation_date || today();
+    $("obs-entry-type").value = observation?.entry_type || "daily";
+    $("obs-condition").value = observation?.condition || "";
+    $("obs-appetite").value = observation?.appetite || "";
+    $("obs-stool").value = observation?.stool || "";
+    $("obs-urine").value = observation?.urine || "";
+    $("obs-behavior").value = observation?.behavior || "";
+    $("obs-weight").value = observation?.weight_kg ?? "";
+    $("obs-temperature").value = observation?.temperature_c ?? "";
+    $("obs-memo").value = observation?.memo || "";
+    $("obs-rescue-location").value = observation?.rescue_location || "";
+    $("obs-rescue-details").value = observation?.rescue_details || "";
+    $("obs-death-date").value = observation?.death_date || "";
+    $("obs-death-cause").value = observation?.death_cause || "";
+    $("obs-death-hospital").value = observation?.veterinary_hospital || "";
+    $("obs-death-note").value = observation?.death_note || "";
+    const saveButton = document.querySelector('#observation-form button[type="submit"]');
+    if (saveButton) saveButton.textContent = observation ? "観察日記を更新" : "観察日記を保存";
+    message("observation-message", "");
     updateObservationTypeFields();
-    ["obs-condition","obs-appetite","obs-stool","obs-urine","obs-behavior","obs-weight","obs-temperature","obs-memo","obs-rescue-location","obs-rescue-details","obs-death-date","obs-death-cause","obs-death-hospital","obs-death-note"].forEach(id => $(id).value = "");
-    message("observation-message","");
     panel("observation-panel");
   }
 
@@ -517,15 +557,81 @@ ${label}
       temperature_c: $("obs-temperature").value ? Number($("obs-temperature").value) : null,
       memo: $("obs-memo").value.trim()
     };
-    if (!payload.observation_date) return message("observation-message","記録日を入力してください。","error");
-    if (payload.entry_type === "death" && !payload.death_date) return message("observation-message","死亡記録では死亡日を入力してください。","error");
-    const { error } = await state.supabase.from("observations").insert(payload);
-    if (error) return message("observation-message", error.message, "error");
+    if (!payload.observation_date) return message("observation-message", "記録日を入力してください。", "error");
+    if (payload.entry_type === "death" && !payload.death_date) return message("observation-message", "死亡記録では死亡日を入力してください。", "error");
+    let result;
+    if (state.editingObservationId) {
+      result = await state.supabase.from("observations").update(payload).eq("id", state.editingObservationId).eq("cat_id", state.selectedCat.id);
+    } else {
+      result = await state.supabase.from("observations").insert(payload);
+    }
+    if (result.error) return message("observation-message", result.error.message, "error");
     if (payload.entry_type === "death") {
       const statusUpdate = await state.supabase.from("cats").update({status: "deceased", updated_by: state.user.id}).eq("id", state.selectedCat.id);
-      if (statusUpdate.error) return message("observation-message", "死亡記録は保存しましたが、猫の状態を死亡に変更できませんでした：" + statusUpdate.error.message, "error");
+      if (statusUpdate.error) return message("observation-message", "観察日記は保存しましたが、猫の状態を死亡に変更できませんでした：" + statusUpdate.error.message, "error");
     }
-    toast("観察日記を保存しました");
+    state.editingObservationId = null;
+    toast(payload.entry_type === "death" ? "観察日記を保存しました" : "観察日記を保存しました");
+    await openCat(state.selectedCat.id);
+  }
+
+  async function deleteObservation(id) {
+    if (!state.selectedCat || !isAdmin()) return toast("観察日記の削除は管理者のみ実行できます。");
+    const record = state.selectedCat.observations.find(o => String(o.id) === String(id));
+    if (!record || !window.confirm(`${formatDate(record.observation_date)} の観察日記を削除しますか？この操作は元に戻せません。`)) return;
+    const { error } = await state.supabase.from("observations").delete().eq("id", id).eq("cat_id", state.selectedCat.id);
+    if (error) return toast("削除できませんでした：" + error.message);
+    toast("観察日記を削除しました");
+    await openCat(state.selectedCat.id);
+  }
+
+  function resetTransferForm() {
+    if (!$("transfer-form")) return;
+    state.editingTransferId = null;
+    $("transfer-id").value = "";
+    $("transfer-date").value = today();
+    $("transfer-recipient").value = "";
+    $("transfer-save-button").textContent = "譲渡情報を保存";
+    $("transfer-cancel-edit").classList.add("hidden");
+    message("transfer-message", "");
+  }
+
+  function editTransferForm(record) {
+    state.editingTransferId = record.id;
+    $("transfer-id").value = record.id;
+    $("transfer-date").value = record.transfer_date || "";
+    $("transfer-recipient").value = record.recipient_name || "";
+    $("transfer-save-button").textContent = "譲渡情報を更新";
+    $("transfer-cancel-edit").classList.remove("hidden");
+    message("transfer-message", "");
+    $("transfer-form").scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+
+  async function saveTransfer(e) {
+    e.preventDefault();
+    if (!state.selectedCat || !canEdit()) return;
+    const payload = {
+      cat_id: state.selectedCat.id,
+      transfer_date: $("transfer-date").value,
+      recipient_name: $("transfer-recipient").value.trim()
+    };
+    if (!payload.transfer_date) return message("transfer-message", "譲渡日を入力してください。", "error");
+    const result = state.editingTransferId
+      ? await state.supabase.from("transfers").update(payload).eq("id", state.editingTransferId).eq("cat_id", state.selectedCat.id)
+      : await state.supabase.from("transfers").insert(payload);
+    if (result.error) return message("transfer-message", result.error.message, "error");
+    resetTransferForm();
+    toast("譲渡情報を保存しました");
+    await openCat(state.selectedCat.id);
+  }
+
+  async function deleteTransfer(id) {
+    if (!state.selectedCat || !isAdmin()) return toast("譲渡情報の削除は管理者のみ実行できます。");
+    const record = state.selectedCat.transfers.find(t => String(t.id) === String(id));
+    if (!record || !window.confirm(`${formatDate(record.transfer_date)} の譲渡情報を削除しますか？この操作は元に戻せません。`)) return;
+    const { error } = await state.supabase.from("transfers").delete().eq("id", id).eq("cat_id", state.selectedCat.id);
+    if (error) return toast("削除できませんでした：" + error.message);
+    toast("譲渡情報を削除しました");
     await openCat(state.selectedCat.id);
   }
 
