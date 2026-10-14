@@ -16,6 +16,8 @@
     editing: false,
     editingObservationId: null,
     editingTransferId: null,
+    editingMedicalId: null,
+    editingMedicalType: null,
     deferredInstall: null,
     googleToken: null,
     googleTokenClient: null
@@ -374,13 +376,14 @@ ${label}
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
 
-      <h3 class="section-title">医療履歴</h3>
+      <h3 class="section-title">医療履歴 ${canEdit() ? '<span class="medical-add-actions"><button type="button" class="primary medical-new-button" data-type="vaccination">＋ ワクチン</button><button type="button" class="primary medical-new-button" data-type="virus_test">＋ ウイルス検査</button><button type="button" class="primary medical-new-button" data-type="surgery">＋ 手術</button></span>' : ""}</h3>
       <div class="timeline">
-        ${c.vaccinations.map(v => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(v.vaccination_date))}</div><strong>ワクチン</strong> ${esc(v.vaccine_type)} ${esc(v.veterinary_hospital)}</div>`).join("")}
-        ${c.virusTests.map(t => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(t.test_date))}</div><strong>検査</strong> FIV ${esc(TEST_LABEL[t.fiv_result])} / FeLV ${esc(TEST_LABEL[t.felv_result])}</div>`).join("")}
-        ${c.surgeries.map(s => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(s.surgery_date))}</div><strong>手術</strong> ${esc(s.surgery_type)} ${esc(s.veterinary_hospital)}</div>`).join("")}
+        ${c.vaccinations.map(v => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(v.vaccination_date))}</div><strong>ワクチン</strong> ${esc(v.vaccine_type)} ${esc(v.veterinary_hospital)}${v.note ? `<div>${esc(v.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="vaccination" data-id="${esc(v.id)}">編集</button></div>` : ""}</div>`).join("")}
+        ${c.virusTests.map(t => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(t.test_date))}</div><strong>検査</strong> FIV ${esc(TEST_LABEL[t.fiv_result])} / FeLV ${esc(TEST_LABEL[t.felv_result])} ${esc(t.veterinary_hospital || "")}${t.note ? `<div>${esc(t.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="virus_test" data-id="${esc(t.id)}">編集</button></div>` : ""}</div>`).join("")}
+        ${c.surgeries.map(s => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(s.surgery_date))}</div><strong>手術</strong> ${esc(s.surgery_type)} ${esc(s.veterinary_hospital)}${s.note ? `<div>${esc(s.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="surgery" data-id="${esc(s.id)}">編集</button></div>` : ""}</div>`).join("")}
         ${(!c.vaccinations.length && !c.virusTests.length && !c.surgeries.length) ? '<div class="empty">医療履歴はありません。</div>' : ""}
       </div>
+      ${canEdit() ? `<form id="medical-form" class="form-grid compact-form hidden"><h4 id="medical-form-title" class="full">医療履歴を入力</h4><input type="hidden" id="medical-id"><label>記録の種類<select id="medical-type"><option value="vaccination">ワクチン</option><option value="virus_test">ウイルス検査</option><option value="surgery">手術</option></select></label><label>実施日<input id="medical-date" type="date" required></label><label id="medical-name-label">ワクチン名<input id="medical-name" maxlength="200"></label><label id="medical-fiv-label">FIV結果<select id="medical-fiv"><option value="unknown">不明</option><option value="positive">陽性</option><option value="negative">陰性</option><option value="not_tested">未検査</option></select></label><label id="medical-felv-label">FeLV結果<select id="medical-felv"><option value="unknown">不明</option><option value="positive">陽性</option><option value="negative">陰性</option><option value="not_tested">未検査</option></select></label><label>動物病院<input id="medical-hospital" maxlength="200"></label><label class="full">メモ<textarea id="medical-note" rows="2" maxlength="2000"></textarea></label><div class="form-actions full"><button class="primary" type="submit" id="medical-save-button">医療履歴を保存</button><button class="secondary" type="button" id="medical-cancel-button">キャンセル</button></div><p id="medical-message" class="message full" aria-live="polite"></p></form>` : ""}
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
@@ -426,6 +429,19 @@ ${label}
       if (record) openObservationForm(record);
     }));
     document.querySelectorAll(".delete-observation-button").forEach(btn => btn.addEventListener("click", () => deleteObservation(btn.dataset.id)));
+    document.querySelectorAll(".medical-new-button").forEach(btn => btn.addEventListener("click", () => openMedicalForm(btn.dataset.type)));
+    document.querySelectorAll(".medical-edit-button").forEach(btn => btn.addEventListener("click", () => {
+      const type = btn.dataset.type;
+      const list = type === "vaccination" ? state.selectedCat?.vaccinations : type === "virus_test" ? state.selectedCat?.virusTests : state.selectedCat?.surgeries;
+      const record = list?.find(item => String(item.id) === btn.dataset.id);
+      if (record) openMedicalForm(type, record);
+    }));
+    const medicalForm = $("medical-form");
+    if (medicalForm) medicalForm.addEventListener("submit", saveMedicalRecord);
+    const medicalType = $("medical-type");
+    if (medicalType) medicalType.addEventListener("change", updateMedicalFormFields);
+    const medicalCancel = $("medical-cancel-button");
+    if (medicalCancel) medicalCancel.addEventListener("click", resetMedicalForm);
     const transferForm = $("transfer-form");
     if (transferForm) transferForm.addEventListener("submit", saveTransfer);
     const newTransfer = $("new-transfer-button");
@@ -583,6 +599,86 @@ ${label}
     if (error) return toast("削除できませんでした：" + error.message);
     toast("観察日記を削除しました");
     await openCat(state.selectedCat.id);
+  }
+
+  function updateMedicalFormFields() {
+    const type = $("medical-type")?.value || "vaccination";
+    const nameLabel = $("medical-name-label");
+    const fivLabel = $("medical-fiv-label");
+    const felvLabel = $("medical-felv-label");
+    if (nameLabel) {
+      nameLabel.classList.toggle("hidden", type === "virus_test");
+      nameLabel.querySelector("input").previousSibling.textContent = type === "surgery" ? "手術名" : "ワクチン名";
+    }
+    if (fivLabel) fivLabel.classList.toggle("hidden", type !== "virus_test");
+    if (felvLabel) felvLabel.classList.toggle("hidden", type !== "virus_test");
+    const title = $("medical-form-title");
+    if (title) title.textContent = type === "vaccination" ? "ワクチン履歴" : type === "virus_test" ? "ウイルス検査履歴" : "手術履歴";
+  }
+
+  function openMedicalForm(type, record=null) {
+    if (!state.selectedCat || !canEdit()) return;
+    const form = $("medical-form");
+    if (!form) return;
+    state.editingMedicalType = type;
+    state.editingMedicalId = record?.id || null;
+    $("medical-id").value = record?.id || "";
+    $("medical-type").value = type;
+    $("medical-date").value = record?.vaccination_date || record?.test_date || record?.surgery_date || today();
+    $("medical-name").value = record?.vaccine_type || record?.surgery_type || "";
+    $("medical-fiv").value = record?.fiv_result || "unknown";
+    $("medical-felv").value = record?.felv_result || "unknown";
+    $("medical-hospital").value = record?.veterinary_hospital || "";
+    $("medical-note").value = record?.note || "";
+    $("medical-save-button").textContent = record ? "医療履歴を更新" : "医療履歴を保存";
+    message("medical-message", "");
+    updateMedicalFormFields();
+    form.classList.remove("hidden");
+    form.scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+
+  function resetMedicalForm() {
+    const form = $("medical-form");
+    if (!form) return;
+    state.editingMedicalType = null;
+    state.editingMedicalId = null;
+    form.reset();
+    $("medical-type").value = "vaccination";
+    $("medical-date").value = today();
+    $("medical-fiv").value = "unknown";
+    $("medical-felv").value = "unknown";
+    $("medical-save-button").textContent = "医療履歴を保存";
+    form.classList.add("hidden");
+    message("medical-message", "");
+  }
+
+  async function saveMedicalRecord(e) {
+    e.preventDefault();
+    if (!state.selectedCat || !canEdit()) return;
+    const type = state.editingMedicalType || $("medical-type").value;
+    const date = $("medical-date").value;
+    if (!date) return message("medical-message", "実施日を入力してください。", "error");
+    let table, dateColumn, payload;
+    if (type === "vaccination") {
+      table = "vaccinations"; dateColumn = "vaccination_date";
+      payload = {cat_id:state.selectedCat.id, vaccination_date:date, vaccine_type:$("medical-name").value.trim(), veterinary_hospital:$("medical-hospital").value.trim(), note:$("medical-note").value.trim()};
+      if (!payload.vaccine_type) return message("medical-message", "ワクチン名を入力してください。", "error");
+    } else if (type === "virus_test") {
+      table = "virus_tests"; dateColumn = "test_date";
+      payload = {cat_id:state.selectedCat.id, test_date:date, fiv_result:$("medical-fiv").value, felv_result:$("medical-felv").value, veterinary_hospital:$("medical-hospital").value.trim(), note:$("medical-note").value.trim()};
+    } else {
+      table = "surgeries"; dateColumn = "surgery_date";
+      payload = {cat_id:state.selectedCat.id, surgery_date:date, surgery_type:$("medical-name").value.trim(), veterinary_hospital:$("medical-hospital").value.trim(), note:$("medical-note").value.trim()};
+      if (!payload.surgery_type) return message("medical-message", "手術名を入力してください。", "error");
+    }
+    const result = state.editingMedicalId
+      ? await state.supabase.from(table).update(payload).eq("id", state.editingMedicalId).eq("cat_id", state.selectedCat.id)
+      : await state.supabase.from(table).insert(payload);
+    if (result.error) return message("medical-message", result.error.message, "error");
+    const catId = state.selectedCat.id;
+    resetMedicalForm();
+    toast("医療履歴を保存しました");
+    await openCat(catId);
   }
 
   function resetTransferForm() {
