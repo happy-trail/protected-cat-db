@@ -267,9 +267,8 @@ ${label}
       .single();
     if (error) return toast(error.message);
 
-    const [observations, transfers, files] = await Promise.all([
+    const [observations, files] = await Promise.all([
       state.supabase.from("observations").select("*").eq("cat_id", id).order("observation_date", {ascending:false}).order("created_at", {ascending:false}),
-      state.supabase.from("transfers").select("*").eq("cat_id", id).order("transfer_date", {ascending:false}),
       state.supabase.from("cat_files").select("*").eq("cat_id", id).order("is_main_photo", {ascending:false}).order("taken_at", {ascending:false})
     ]);
 
@@ -277,7 +276,7 @@ ${label}
       ...data,
       vaccinations: [], virusTests: [], surgeries: [],
       observations: observations.data || [],
-      transfers: transfers.data || [],
+      transfers: [],
       files: files.data || []
     };
     renderDetail();
@@ -371,7 +370,7 @@ ${label}
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
 
-      <h3 class="section-title">医療情報 ${canEdit() ? '<button id="edit-cat-medical-button" class="primary" type="button">医療情報を編集</button>' : ""}</h3>
+      <h3 class="section-title">医療情報</h3>
       <div class="info-grid medical-main-table">
         <div class="key">ワクチン</div><div>${esc(c.vaccine_type || "—")} ${c.vaccination_date ? `／ ${esc(formatDate(c.vaccination_date))}` : ""}</div>
         <div class="key">ウイルス検査日</div><div>${esc(formatDate(c.virus_test_date) || "—")}</div>
@@ -385,11 +384,11 @@ ${label}
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
-      <h3 class="section-title">譲渡情報 ${canEdit() ? '<button id="new-transfer-button" class="primary" type="button">＋ 譲渡情報を入力</button>' : ""}</h3>
-      <div class="transfer-list">
-        ${c.transfers.length ? c.transfers.map(t => `<div class="timeline-item transfer-item"><div><strong>譲渡日：</strong>${esc(formatDate(t.transfer_date))}</div><div><strong>譲渡先：</strong>${esc(t.recipient_name || "—")}</div>${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-transfer-button" data-id="${esc(t.id)}">編集</button>${isAdmin() ? `<button type="button" class="danger delete-transfer-button" data-id="${esc(t.id)}">削除</button>` : ""}</div>` : ""}</div>`).join("") : '<div class="empty">譲渡情報はまだありません。</div>'}
+      <h3 class="section-title">譲渡情報</h3>
+      <div class="info-grid">
+        <div class="key">譲渡日</div><div>${c.transfer_date ? esc(formatDate(c.transfer_date)) : "—"}</div>
+        <div class="key">譲渡先</div><div>${esc(c.transfer_recipient || "—")}</div>
       </div>
-      ${canEdit() ? `<form id="transfer-form" class="form-grid compact-form"><input type="hidden" id="transfer-id"><label>譲渡日<input id="transfer-date" type="date" required></label><label>譲渡先<input id="transfer-recipient" maxlength="200" placeholder="譲渡先の氏名・団体名"></label><div class="form-actions full"><button class="primary" type="submit" id="transfer-save-button">譲渡情報を保存</button><button class="secondary hidden" id="transfer-cancel-edit" type="button">編集をキャンセル</button></div><p id="transfer-message" class="message full" aria-live="polite"></p></form>` : ""}
       ${isAdmin() ? `<div class="danger-zone"><p>管理者操作</p><button type="button" id="delete-cat-button" class="danger">この猫を一覧から削除</button></div>` : ""}
     `;
     const photoCards = document.querySelectorAll("[data-drive-file-id]");
@@ -427,19 +426,6 @@ ${label}
       if (record) openObservationForm(record);
     }));
     document.querySelectorAll(".delete-observation-button").forEach(btn => btn.addEventListener("click", () => deleteObservation(btn.dataset.id)));
-    const editMedicalMain = $("edit-cat-medical-button");
-    if (editMedicalMain) editMedicalMain.addEventListener("click", () => openCatForm(state.selectedCat));
-    const transferForm = $("transfer-form");
-    if (transferForm) transferForm.addEventListener("submit", saveTransfer);
-    const newTransfer = $("new-transfer-button");
-    if (newTransfer) newTransfer.addEventListener("click", () => resetTransferForm());
-    document.querySelectorAll(".edit-transfer-button").forEach(btn => btn.addEventListener("click", () => {
-      const record = state.selectedCat?.transfers.find(t => String(t.id) === btn.dataset.id);
-      if (record) editTransferForm(record);
-    }));
-    document.querySelectorAll(".delete-transfer-button").forEach(btn => btn.addEventListener("click", () => deleteTransfer(btn.dataset.id)));
-    const cancelTransferEdit = $("transfer-cancel-edit");
-    if (cancelTransferEdit) cancelTransferEdit.addEventListener("click", resetTransferForm);
     const deleteCatButton = $("delete-cat-button");
     if (deleteCatButton) deleteCatButton.addEventListener("click", deleteCatRecord);
     document.querySelectorAll(".photo-delete-button").forEach(btn => {
@@ -469,6 +455,8 @@ ${label}
     $("cat-surgery-date").value = cat?.surgery_date || "";
     $("cat-medical-hospital").value = cat?.medical_hospital || "";
     $("cat-medical-note").value = cat?.medical_note || "";
+    $("cat-transfer-date").value = cat?.transfer_date || "";
+    $("cat-transfer-recipient").value = cat?.transfer_recipient || "";
     message("cat-form-message","");
     panel("cat-form-panel");
   }
@@ -498,6 +486,8 @@ ${label}
       surgery_date: $("cat-surgery-date").value || null,
       medical_hospital: $("cat-medical-hospital").value.trim(),
       medical_note: $("cat-medical-note").value.trim(),
+      transfer_date: $("cat-transfer-date").value || null,
+      transfer_recipient: $("cat-transfer-recipient").value.trim(),
       updated_by: state.user.id
     };
 
@@ -987,7 +977,7 @@ ${label}
       ].filter(Boolean);
       return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
     }).join("");
-    const transfer = latest(cat.transfers);
+    const transfer = { transfer_date: cat.transfer_date, recipient_name: cat.transfer_recipient };
     const diary = `<div class="record-diary-empty" aria-hidden="true"></div>${diaryRows}`;
     return `
       <section class="individual-record">
