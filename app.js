@@ -267,10 +267,7 @@ ${label}
       .single();
     if (error) return toast(error.message);
 
-    const [vaccinations, virusTests, surgeries, observations, transfers, files] = await Promise.all([
-      state.supabase.from("vaccinations").select("*").eq("cat_id", id).order("vaccination_date", {ascending:false}),
-      state.supabase.from("virus_tests").select("*").eq("cat_id", id).order("test_date", {ascending:false}),
-      state.supabase.from("surgeries").select("*").eq("cat_id", id).order("surgery_date", {ascending:false}),
+    const [observations, transfers, files] = await Promise.all([
       state.supabase.from("observations").select("*").eq("cat_id", id).order("observation_date", {ascending:false}).order("created_at", {ascending:false}),
       state.supabase.from("transfers").select("*").eq("cat_id", id).order("transfer_date", {ascending:false}),
       state.supabase.from("cat_files").select("*").eq("cat_id", id).order("is_main_photo", {ascending:false}).order("taken_at", {ascending:false})
@@ -278,9 +275,7 @@ ${label}
 
     state.selectedCat = {
       ...data,
-      vaccinations: vaccinations.data || [],
-      virusTests: virusTests.data || [],
-      surgeries: surgeries.data || [],
+      vaccinations: [], virusTests: [], surgeries: [],
       observations: observations.data || [],
       transfers: transfers.data || [],
       files: files.data || []
@@ -318,9 +313,9 @@ ${label}
 
   async function renderDetail() {
     const c = state.selectedCat;
-    const vaccine = latest(c.vaccinations);
-    const test = latest(c.virusTests);
-    const surgery = latest(c.surgeries);
+    const vaccine = c;
+    const test = c;
+    const surgery = c;
     const mainFile = c.files.find(f => f.is_main_photo) || c.files[0];
     let mainImageUrl = "";
     let mainImageError = "";
@@ -344,10 +339,10 @@ ${label}
             <div class="key">保護日</div><div>${esc(formatDate(c.rescued_date))}</div>
             <div class="key">推定年齢</div><div>${esc(c.estimated_age_text || "—")}</div>
             <div class="key">不妊・去勢</div><div>${esc(NEUTER_LABEL[c.neuter_status])}</div>
-            <div class="key">ワクチン</div><div>${vaccine ? `${esc(vaccine.vaccine_type)} / ${esc(formatDate(vaccine.vaccination_date))}` : "—"}</div>
-            <div class="key">FIV</div><div>${test ? esc(TEST_LABEL[test.fiv_result]) : "—"}</div>
-            <div class="key">FeLV</div><div>${test ? esc(TEST_LABEL[test.felv_result]) : "—"}</div>
-            <div class="key">手術</div><div>${surgery ? `${esc(surgery.surgery_type)} / ${esc(formatDate(surgery.surgery_date))}` : "—"}</div>
+            <div class="key">ワクチン</div><div>${vaccine.vaccine_type ? `${esc(vaccine.vaccine_type)} / ${esc(formatDate(vaccine.vaccination_date))}` : "—"}</div>
+            <div class="key">FIV</div><div>${esc(TEST_LABEL[test.fiv_result] || "—")}${test.virus_test_date ? `（${esc(formatDate(test.virus_test_date))}）` : ""}</div>
+            <div class="key">FeLV</div><div>${esc(TEST_LABEL[test.felv_result] || "—")}</div>
+            <div class="key">手術</div><div>${surgery.surgery_type ? `${esc(surgery.surgery_type)} / ${esc(formatDate(surgery.surgery_date))}` : "—"}</div>
           </div>
         </div>
       </div>
@@ -376,14 +371,17 @@ ${label}
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
       </div>
 
-      <h3 class="section-title">医療履歴 ${canEdit() ? '<span class="medical-add-actions"><button type="button" class="primary medical-new-button" data-type="vaccination">＋ ワクチン</button><button type="button" class="primary medical-new-button" data-type="virus_test">＋ ウイルス検査</button><button type="button" class="primary medical-new-button" data-type="surgery">＋ 手術</button></span>' : ""}</h3>
-      <div class="timeline">
-        ${c.vaccinations.map(v => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(v.vaccination_date))}</div><strong>ワクチン</strong> ${esc(v.vaccine_type)} ${esc(v.veterinary_hospital)}${v.note ? `<div>${esc(v.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="vaccination" data-id="${esc(v.id)}">編集</button></div>` : ""}</div>`).join("")}
-        ${c.virusTests.map(t => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(t.test_date))}</div><strong>検査</strong> FIV ${esc(TEST_LABEL[t.fiv_result])} / FeLV ${esc(TEST_LABEL[t.felv_result])} ${esc(t.veterinary_hospital || "")}${t.note ? `<div>${esc(t.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="virus_test" data-id="${esc(t.id)}">編集</button></div>` : ""}</div>`).join("")}
-        ${c.surgeries.map(s => `<div class="timeline-item"><div class="timeline-date">${esc(formatDate(s.surgery_date))}</div><strong>手術</strong> ${esc(s.surgery_type)} ${esc(s.veterinary_hospital)}${s.note ? `<div>${esc(s.note)}</div>` : ""}${canEdit() ? `<div class="record-actions"><button type="button" class="secondary medical-edit-button" data-type="surgery" data-id="${esc(s.id)}">編集</button></div>` : ""}</div>`).join("")}
-        ${(!c.vaccinations.length && !c.virusTests.length && !c.surgeries.length) ? '<div class="empty">医療履歴はありません。</div>' : ""}
+      <h3 class="section-title">医療情報 ${canEdit() ? '<button id="edit-cat-medical-button" class="primary" type="button">医療情報を編集</button>' : ""}</h3>
+      <div class="info-grid medical-main-table">
+        <div class="key">ワクチン</div><div>${esc(c.vaccine_type || "—")} ${c.vaccination_date ? `／ ${esc(formatDate(c.vaccination_date))}` : ""}</div>
+        <div class="key">ウイルス検査日</div><div>${esc(formatDate(c.virus_test_date) || "—")}</div>
+        <div class="key">FIV</div><div>${esc(TEST_LABEL[c.fiv_result] || "—")}</div>
+        <div class="key">FeLV</div><div>${esc(TEST_LABEL[c.felv_result] || "—")}</div>
+        <div class="key">手術</div><div>${esc(c.surgery_type || "—")} ${c.surgery_date ? `／ ${esc(formatDate(c.surgery_date))}` : ""}</div>
+        ${c.medical_hospital ? `<div class="key">動物病院</div><div>${esc(c.medical_hospital)}</div>` : ""}
+        ${c.medical_note ? `<div class="key">医療メモ</div><div>${esc(c.medical_note)}</div>` : ""}
       </div>
-      ${canEdit() ? `<form id="medical-form" class="form-grid compact-form hidden"><h4 id="medical-form-title" class="full">医療履歴を入力</h4><input type="hidden" id="medical-id"><label>記録の種類<select id="medical-type"><option value="vaccination">ワクチン</option><option value="virus_test">ウイルス検査</option><option value="surgery">手術</option></select></label><label>実施日<input id="medical-date" type="date" required></label><label id="medical-name-label">ワクチン名<input id="medical-name" maxlength="200"></label><label id="medical-fiv-label">FIV結果<select id="medical-fiv"><option value="unknown">不明</option><option value="positive">陽性</option><option value="negative">陰性</option><option value="not_tested">未検査</option></select></label><label id="medical-felv-label">FeLV結果<select id="medical-felv"><option value="unknown">不明</option><option value="positive">陽性</option><option value="negative">陰性</option><option value="not_tested">未検査</option></select></label><label>動物病院<input id="medical-hospital" maxlength="200"></label><label class="full">メモ<textarea id="medical-note" rows="2" maxlength="2000"></textarea></label><div class="form-actions full"><button class="primary" type="submit" id="medical-save-button">医療履歴を保存</button><button class="secondary" type="button" id="medical-cancel-button">キャンセル</button></div><p id="medical-message" class="message full" aria-live="polite"></p></form>` : ""}
+      <p class="muted">医療情報は猫のメイン情報に保存されます。</p>
 
       <!-- 写真一覧は画面下部の drive-files に一本化。ここで重複表示しない。 -->
 
@@ -429,19 +427,8 @@ ${label}
       if (record) openObservationForm(record);
     }));
     document.querySelectorAll(".delete-observation-button").forEach(btn => btn.addEventListener("click", () => deleteObservation(btn.dataset.id)));
-    document.querySelectorAll(".medical-new-button").forEach(btn => btn.addEventListener("click", () => openMedicalForm(btn.dataset.type)));
-    document.querySelectorAll(".medical-edit-button").forEach(btn => btn.addEventListener("click", () => {
-      const type = btn.dataset.type;
-      const list = type === "vaccination" ? state.selectedCat?.vaccinations : type === "virus_test" ? state.selectedCat?.virusTests : state.selectedCat?.surgeries;
-      const record = list?.find(item => String(item.id) === btn.dataset.id);
-      if (record) openMedicalForm(type, record);
-    }));
-    const medicalForm = $("medical-form");
-    if (medicalForm) medicalForm.addEventListener("submit", saveMedicalRecord);
-    const medicalType = $("medical-type");
-    if (medicalType) medicalType.addEventListener("change", updateMedicalFormFields);
-    const medicalCancel = $("medical-cancel-button");
-    if (medicalCancel) medicalCancel.addEventListener("click", resetMedicalForm);
+    const editMedicalMain = $("edit-cat-medical-button");
+    if (editMedicalMain) editMedicalMain.addEventListener("click", () => openCatForm(state.selectedCat));
     const transferForm = $("transfer-form");
     if (transferForm) transferForm.addEventListener("submit", saveTransfer);
     const newTransfer = $("new-transfer-button");
@@ -474,6 +461,15 @@ ${label}
     $("cat-status").value = cat?.status || "protected";
     $("neuter-status").value = cat?.neuter_status || "unknown";
     $("current-note").value = cat?.current_note || "";
+    $("cat-vaccine-date").value = cat?.vaccination_date || "";
+    $("cat-vaccine-type").value = cat?.vaccine_type || "";
+    $("cat-virus-date").value = cat?.virus_test_date || "";
+    $("cat-fiv-result").value = cat?.fiv_result || "unknown";
+    $("cat-felv-result").value = cat?.felv_result || "unknown";
+    $("cat-surgery-date").value = cat?.surgery_date || "";
+    $("cat-surgery-type").value = cat?.surgery_type || "";
+    $("cat-medical-hospital").value = cat?.medical_hospital || "";
+    $("cat-medical-note").value = cat?.medical_note || "";
     message("cat-form-message","");
     panel("cat-form-panel");
   }
@@ -495,6 +491,15 @@ ${label}
       status: desiredStatus,
       neuter_status: $("neuter-status").value,
       current_note: $("current-note").value.trim(),
+      vaccination_date: $("cat-vaccine-date").value || null,
+      vaccine_type: $("cat-vaccine-type").value.trim(),
+      virus_test_date: $("cat-virus-date").value || null,
+      fiv_result: $("cat-fiv-result").value,
+      felv_result: $("cat-felv-result").value,
+      surgery_date: $("cat-surgery-date").value || null,
+      surgery_type: $("cat-surgery-type").value.trim(),
+      medical_hospital: $("cat-medical-hospital").value.trim(),
+      medical_note: $("cat-medical-note").value.trim(),
       updated_by: state.user.id
     };
 
@@ -959,9 +964,7 @@ ${label}
   // ---------------- 保健所提出用PDF ----------------
 
   function buildHealthForm(cat, photoUrl = "") {
-    const vaccine = latest(cat.vaccinations);
-    const test = latest(cat.virusTests);
-    const surgery = latest(cat.surgeries);
+    const vaccine = cat, test = cat, surgery = cat;
     const main = cat.files.find(f => f.is_main_photo) || cat.files[0];
     const photo = photoUrl
       ? `<img class="record-photo" src="${esc(photoUrl)}" alt="${esc(cat.name || "保護猫")}の写真">`
@@ -1003,11 +1006,11 @@ ${label}
               <div class="record-field"><b>保護日</b><span>${esc(formatDate(cat.rescued_date))}</span></div>
               <div class="record-field"><b>品種等</b><span>${esc(cat.breed || "")}</span></div>
               <div class="record-field record-age"><b>保護時年齢・生まれ（推定）</b><span>${esc(cat.estimated_age_text || formatDate(cat.estimated_birth_date) || "")}</span></div>
-              <div class="record-field"><b>ワクチン</b><span>${vaccine ? `${esc(vaccine.vaccine_type || "接種済")} ${esc(formatDate(vaccine.vaccination_date))}` : ""}</span></div>
-              <div class="record-field"><b>不妊去勢手術日</b><span>${surgery ? esc(formatDate(surgery.surgery_date)) : ""}</span></div>
-              <div class="record-field"><b>ウイルス検査日</b><span>${test ? esc(formatDate(test.test_date)) : ""}</span></div>
-              <div class="record-field"><b>FIV</b><span class="record-virus-options"><span class="${test && test.fiv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test && test.fiv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
-              <div class="record-field"><b>FeLV</b><span class="record-virus-options"><span class="${test && test.felv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test && test.felv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
+              <div class="record-field"><b>ワクチン</b><span>${vaccine.vaccine_type ? `${esc(vaccine.vaccine_type || "接種済")} ${esc(formatDate(vaccine.vaccination_date))}` : ""}</span></div>
+              <div class="record-field"><b>不妊去勢手術日</b><span>${surgery.surgery_date ? esc(formatDate(surgery.surgery_date)) : ""}</span></div>
+              <div class="record-field"><b>ウイルス検査日</b><span>${test.virus_test_date ? esc(formatDate(test.virus_test_date)) : ""}</span></div>
+              <div class="record-field"><b>FIV</b><span class="record-virus-options"><span class="${test.fiv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test.fiv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
+              <div class="record-field"><b>FeLV</b><span class="record-virus-options"><span class="${test.felv_result === "positive" ? "virus-selected" : ""}">＋</span><span class="${test.felv_result === "negative" ? "virus-selected" : ""}">−</span></span></div>
             </div>
           </div>
           <div class="record-diary-title">保護した時の状況・体調など　観察日記</div>
