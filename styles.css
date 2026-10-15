@@ -227,3 +227,63 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .transfer-list{display:grid;gap:8px;margin-bottom:12px}
 .transfer-item{padding:12px;border:1px solid var(--border,#ddd);border-radius:10px}
 .compact-form{padding:12px;border:1px solid var(--border,#ddd);border-radius:10px;margin:10px 0 18px}
+
+/* Staff management */
+.staff-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.staff-card {
+  border: 1px solid var(--border-color, #d9ded9);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.staff-card label {
+  display: grid;
+  gap: 6px;
+}
+
+.staff-card input,
+.staff-card select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.staff-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.staff-card-actions button {
+  min-height: 40px;
+}
+
+#staff-management-panel .compact-form {
+  margin-top: 16px;
+}
+
+#staff-management-panel .message {
+  overflow-wrap: anywhere;
+}
+
+#staff-management-panel .muted {
+  color: var(--muted, #667066);
+}
+
+@media (max-width: 600px) {
+  .staff-card {
+    padding: 12px;
+  }
+
+  .staff-card-actions button {
+    flex: 1 1 130px;
+  }
+}
