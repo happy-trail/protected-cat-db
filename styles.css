@@ -162,7 +162,7 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 
 
 /* 個体情報記録票：Excel調整版に合わせたA4横1ページ帳票 */
-.individual-record { width:281mm; height:190mm; margin:0 auto; display:grid; grid-template-columns:calc((100% - 3mm)/2) calc((100% - 3mm)/2); column-gap:3mm; color:#111; background:#fff; font-family:"Noto Sans JP","Yu Gothic",sans-serif; font-size:8.5pt; line-height:1.25; }
+.individual-record { width:281mm; height:175mm; margin:0 auto; display:grid; grid-template-columns:calc((100% - 3mm)/2) calc((100% - 3mm)/2); column-gap:3mm; color:#111; background:#fff; font-family:"Noto Sans JP","Yu Gothic",sans-serif; font-size:8.5pt; line-height:1.25; }
 .record-left,.record-right { min-width:0; height:190mm; border:1px solid #222; display:flex; flex-direction:column; }
 .record-left { border-right:1px solid #222; }
 .record-profile { display:grid; grid-template-columns:35% 65%; height:94mm; min-height:94mm; }
@@ -190,7 +190,7 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-death { display:flex; align-items:center; flex:0 0 9mm; height:9mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm 1.5mm 20mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .record-right { position:relative; }
 .record-adoption { box-sizing:border-box; height:14mm; min-height:14mm; flex:0 0 14mm; border-bottom:1px solid #222; }
-.record-adoption-content { height:100%; padding:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:7mm 7mm; column-gap:0; }
+.record-adoption-content { height:100%; padding:0; display:grid; grid-template-columns:18mm minmax(0,1fr); grid-template-rows:7mm 7mm; column-gap:0; }
 .record-adoption-content > div { display:contents; }
 .record-adoption-content b { grid-row:1; display:flex; align-items:center; padding:0 2mm; font-weight:600; border-bottom:1px solid #aaa; }
 .record-transfer-date b { justify-content:center; text-align:center; }
@@ -198,8 +198,8 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-transfer-date span { font-size:7.5pt; }
 .record-transfer-date b { grid-column:1; }
 .record-transfer-date span { grid-column:1; }
-.record-transfer-recipient b { grid-column:2; border-left:1px solid #aaa; }
-.record-transfer-recipient span { grid-column:2; border-left:1px solid #aaa; }
+.record-transfer-recipient b { grid-column:2; border-left:0; }
+.record-transfer-recipient span { grid-column:2; border-left:0; }
 .record-right::before { content:""; position:absolute; left:17.8mm; top:0; bottom:0; width:.2mm; background:#777; z-index:3; pointer-events:none; }
 .record-continuation { flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column; position:relative; }
 .record-continuation-lines { position:absolute; left:0; right:0; top:0; bottom:-8mm; z-index:0; min-height:0; background:repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); pointer-events:none; }
@@ -210,10 +210,10 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-bottom-number { display:flex; align-items:center; justify-content:flex-end; flex:0 0 8mm; height:8mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm; min-height:8mm; text-align:right; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .health-actions { display:flex; gap:12px; align-items:center; margin:8px auto; max-width:281mm; font-size:14px; }
 @media print {
-  @page { size:A4 landscape; margin:20mm 8mm 0; }
-  html,body { width:281mm !important; height:190mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
+  @page { size:A4 landscape; margin:25mm 8mm 10mm; }
+  html,body { width:281mm !important; height:175mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
   .health-actions { display:none !important; }
-  .individual-record { width:281mm; height:190mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
+  .individual-record { width:281mm; height:175mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
 }
 
 /* 管理者による削除操作 */
