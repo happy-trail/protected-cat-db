@@ -53,7 +53,7 @@
   }
 
   function panel(name) {
-    ["list-panel","detail-panel","cat-form-panel","observation-panel"].forEach(id => $(id).classList.add("hidden"));
+    ["list-panel","detail-panel","cat-form-panel","observation-panel","staff-management-panel"].forEach(id => $(id).classList.add("hidden"));
     $(name).classList.remove("hidden");
   }
 
@@ -132,23 +132,12 @@
 
   function updateRoleControls() {
     const editable = canEdit();
-    const admin = isAdmin();
-  
     const newCatButton = $("new-cat-button");
     const editCatButton = $("edit-cat-button");
-    const staffManagementButton = $("staff-management-button");
-  
-    if (newCatButton) {
-      newCatButton.classList.toggle("hidden", !editable);
-    }
-  
-    if (editCatButton) {
-      editCatButton.classList.toggle("hidden", !editable);
-    }
-  
-    if (staffManagementButton) {
-      staffManagementButton.classList.toggle("hidden", !admin);
-    }
+    if (newCatButton) newCatButton.classList.toggle("hidden", !editable);
+    if (editCatButton) editCatButton.classList.toggle("hidden", !editable);
+    const staffButton = $("staff-management-button");
+    if (staffButton) staffButton.classList.toggle("hidden", !isAdmin());
   }
 
   function canEdit() {
@@ -1086,6 +1075,79 @@ ${label}
     printWindow.print();
   }
 
+  async function callStaffAdmin(payload) {
+    if (!isAdmin()) throw new Error("スタッフ管理は管理者のみ利用できます。");
+    const { data, error } = await state.supabase.functions.invoke("cat-user-admin", { body: payload });
+    if (error) {
+      let detail = error.message || "Edge Functionの呼び出しに失敗しました。";
+      try { const context = error.context; if (context?.json) { const body = await context.json(); if (body?.error) detail = body.error; } } catch (_) {}
+      throw new Error(detail);
+    }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  function openStaffManagement() {
+    if (!isAdmin()) return toast("スタッフ管理は管理者のみ利用できます。");
+    panel("staff-management-panel");
+    $("page-title").textContent = "スタッフ管理";
+    loadStaffList().catch(e => message("staff-list-message", e.message || String(e), "error"));
+  }
+
+  async function loadStaffList() {
+    if (!isAdmin()) return;
+    const list = $("staff-list");
+    list.innerHTML = '<p class="muted">読み込み中…</p>';
+    message("staff-list-message", "");
+    const result = await callStaffAdmin({ action: "list" });
+    const users = result.users || [];
+    if (!users.length) { list.innerHTML = '<p class="muted">ユーザーがいません。</p>'; return; }
+    list.innerHTML = users.map(u => `
+      <article class="staff-item">
+        <div class="staff-item-info"><strong>${esc(u.display_name || "名前未設定")}</strong><div>${esc(u.email || "メール未登録")}</div><small>権限：${u.role === "admin" ? "管理者" : u.role === "staff" ? "スタッフ" : "閲覧者"} ／ ${u.active ? "利用中" : "停止中"}</small></div>
+        <div class="staff-item-actions">
+          ${u.id === state.user.id ? '<span class="muted">ログイン中</span>' : `
+            <label class="staff-inline-label">権限<select data-staff-role="${esc(u.id)}" ${u.role === "admin" ? "disabled" : ""}><option value="staff" ${u.role === "staff" ? "selected" : ""}>スタッフ</option><option value="viewer" ${u.role === "viewer" ? "selected" : ""}>閲覧者</option></select></label>
+            <button type="button" class="secondary" data-staff-save="${esc(u.id)}" ${u.role === "admin" ? "disabled" : ""}>変更</button>
+            <button type="button" class="${u.active ? "danger" : "secondary"}" data-staff-active="${esc(u.id)}" data-active="${u.active ? "true" : "false"}" ${u.role === "admin" ? "disabled" : ""}>${u.active ? "利用停止" : "利用再開"}</button>`}
+        </div>
+      </article>`).join("");
+    list.querySelectorAll("[data-staff-save]").forEach(btn => btn.addEventListener("click", async () => {
+      const id = btn.dataset.staffSave;
+      const select = list.querySelector(`[data-staff-role="${CSS.escape(id)}"]`);
+      if (!select) return;
+      btn.disabled = true;
+      try { await callStaffAdmin({ action: "update", user_id: id, role: select.value }); toast("権限を変更しました。"); await loadStaffList(); }
+      catch (e) { message("staff-list-message", e.message || String(e), "error"); btn.disabled = false; }
+    }));
+    list.querySelectorAll("[data-staff-active]").forEach(btn => btn.addEventListener("click", async () => {
+      const id = btn.dataset.staffActive, currentlyActive = btn.dataset.active === "true";
+      if (!window.confirm(currentlyActive ? "このユーザーを利用停止にしますか？次回からログイン後に利用できなくなります。" : "このユーザーの利用を再開しますか？")) return;
+      btn.disabled = true;
+      try { await callStaffAdmin({ action: "update", user_id: id, active: !currentlyActive }); toast(currentlyActive ? "利用停止にしました。" : "利用を再開しました。"); await loadStaffList(); }
+      catch (e) { message("staff-list-message", e.message || String(e), "error"); btn.disabled = false; }
+    }));
+  }
+
+  async function createStaffAccount(e) {
+    e.preventDefault();
+    const out = $("staff-create-message");
+    message("staff-create-message", "アカウントを作成しています…");
+    const display_name = $("staff-display-name").value.trim();
+    const email = $("staff-email").value.trim();
+    const password = $("staff-password").value;
+    const role = $("staff-role").value;
+    if (password.length < 10) return message("staff-create-message", "初期パスワードは10文字以上にしてください。", "error");
+    try {
+      await callStaffAdmin({ action: "create", display_name, email, password, role });
+      $("staff-create-form").reset();
+      message("staff-create-message", "アカウントを作成しました。本人へログイン情報を安全な方法で伝えてください。", "success");
+      await loadStaffList();
+    } catch (e) {
+      message("staff-create-message", e.message || String(e), "error");
+    }
+  }
+
   function setupEvents() {
     $("config-form").addEventListener("submit", async e => {
       e.preventDefault();
@@ -1117,6 +1179,10 @@ ${label}
     });
 
     $("new-cat-button").addEventListener("click", () => { if (canEdit()) openCatForm(); });
+    $("staff-management-button").addEventListener("click", openStaffManagement);
+    $("staff-back-button").addEventListener("click", () => { panel("list-panel"); $("page-title").textContent = "猫一覧"; });
+    $("staff-refresh-button").addEventListener("click", () => loadStaffList().catch(e => message("staff-list-message", e.message || String(e), "error")));
+    $("staff-create-form").addEventListener("submit", createStaffAccount);
     $("refresh-button").addEventListener("click", () => loadCats().catch(err => toast(err.message)));
     $("logout-button").addEventListener("click", async () => {
       await state.supabase.auth.signOut();
