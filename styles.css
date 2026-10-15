@@ -190,10 +190,12 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-death { display:flex; align-items:center; flex:0 0 9mm; height:9mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm 1.5mm 20mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .record-right { position:relative; }
 .record-adoption { box-sizing:border-box; height:14mm; min-height:14mm; flex:0 0 14mm; border-bottom:1px solid #222; }
-.record-adoption-content { height:100%; padding:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:7mm 7mm; }
+.record-adoption-content { height:100%; padding:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:7mm 7mm; column-gap:0; }
 .record-adoption-content > div { display:contents; }
 .record-adoption-content b { grid-row:1; display:flex; align-items:center; padding:0 2mm; font-weight:600; border-bottom:1px solid #aaa; }
+.record-transfer-date b { justify-content:center; text-align:center; }
 .record-adoption-content span { grid-row:2; display:flex; align-items:center; min-width:0; padding:0 2mm; overflow-wrap:anywhere; border-bottom:1px solid #aaa; }
+.record-transfer-date span { font-size:7.5pt; }
 .record-transfer-date b { grid-column:1; }
 .record-transfer-date span { grid-column:1; }
 .record-transfer-recipient b { grid-column:2; border-left:1px solid #aaa; }
