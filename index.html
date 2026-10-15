@@ -124,16 +124,6 @@
           <label>推定生年月日<input id="estimated-birth-date" type="date"></label>
           <label>推定年齢<input id="estimated-age" placeholder="例：推定2歳"></label>
           <label>状態<select id="cat-status"><option value="protected">保護中</option><option value="adopted">譲渡済</option><option value="deceased">死亡</option><option value="missing">行方不明</option><option value="other">その他</option></select></label>
-          <div id="death-fields" class="full hidden">
-            <h3>死亡記録</h3>
-            <div class="form-grid">
-              <label>死亡日<input id="death-date" type="date"></label>
-              <label>死因<input id="death-cause" placeholder="例：老衰、病気、不明"></label>
-              <label class="full">動物病院<input id="death-hospital"></label>
-              <label class="full">メモ<textarea id="death-note" rows="3"></textarea></label>
-            </div>
-            <p class="muted">死亡記録は専用テーブルに保存されます。死亡日と死因は互換性維持のため猫情報側にも同期されます。</p>
-          </div>
           <label>不妊・去勢<select id="neuter-status"><option value="unknown">不明</option><option value="intact">未手術</option><option value="neutered">去勢済</option><option value="spayed">避妊済</option></select></label>
           <div class="full"><h3>医療情報（猫のメイン情報に保存）</h3></div>
           <label>ワクチン接種日<input id="cat-vaccine-date" type="date"></label>
@@ -163,7 +153,7 @@
         </div>
         <form id="observation-form" class="form-grid">
           <label>記録日<input id="obs-date" type="date" required></label>
-          <label>記録区分<select id="obs-entry-type"><option value="daily">通常の観察</option><option value="rescue">保護時の記録</option><option value="death">死亡記録</option></select></label>
+          <label>記録区分<select id="obs-entry-type"><option value="daily">通常の観察</option><option value="rescue">保護時の記録</option></select></label>
           <div id="obs-daily-fields" class="full form-grid">
             <label>体調<input id="obs-condition"></label>
             <label>食欲<input id="obs-appetite"></label>
@@ -176,12 +166,6 @@
           <div id="obs-rescue-fields" class="full form-grid hidden">
             <label>保護場所<input id="obs-rescue-location"></label>
             <label class="full">保護時の状況<textarea id="obs-rescue-details" rows="4"></textarea></label>
-          </div>
-          <div id="obs-death-fields" class="full form-grid hidden">
-            <label>死亡日<input id="obs-death-date" type="date"></label>
-            <label>死因<input id="obs-death-cause" placeholder="例：老衰、病気、不明"></label>
-            <label class="full">動物病院<input id="obs-death-hospital"></label>
-            <label class="full">死亡時メモ<textarea id="obs-death-note" rows="3"></textarea></label>
           </div>
           <label class="full">記録・メモ<textarea id="obs-memo" rows="5"></textarea></label>
           <div class="form-actions full">
