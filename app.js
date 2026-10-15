@@ -132,10 +132,23 @@
 
   function updateRoleControls() {
     const editable = canEdit();
+    const admin = isAdmin();
+  
     const newCatButton = $("new-cat-button");
     const editCatButton = $("edit-cat-button");
-    if (newCatButton) newCatButton.classList.toggle("hidden", !editable);
-    if (editCatButton) editCatButton.classList.toggle("hidden", !editable);
+    const staffManagementButton = $("staff-management-button");
+  
+    if (newCatButton) {
+      newCatButton.classList.toggle("hidden", !editable);
+    }
+  
+    if (editCatButton) {
+      editCatButton.classList.toggle("hidden", !editable);
+    }
+  
+    if (staffManagementButton) {
+      staffManagementButton.classList.toggle("hidden", !admin);
+    }
   }
 
   function canEdit() {
