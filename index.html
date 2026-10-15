@@ -58,6 +58,7 @@
           <p id="user-label" class="muted"></p>
         </div>
         <div class="toolbar-actions">
+          <button id="staff-management-button" class="secondary hidden" type="button">スタッフ管理</button>
           <button id="new-cat-button" class="primary" type="button">＋ 猫を登録</button>
           <button id="refresh-button" class="secondary" type="button">更新</button>
           <button id="logout-button" class="secondary" type="button">ログアウト</button>
@@ -155,7 +156,27 @@
           <p id="cat-form-message" class="message full" aria-live="polite"></p>
         </form>
       </div>
-
+      
+      <div id="staff-management-panel" class="panel hidden">
+        <div class="detail-head">
+          <button id="staff-back-button" class="secondary" type="button">← 猫一覧</button>
+          <h2>スタッフ管理</h2>
+          <button id="staff-refresh-button" class="secondary" type="button">一覧を更新</button>
+        </div>
+        <p class="muted">管理者専用です。アカウント作成・権限変更・利用停止を行えます。</p>
+        <form id="staff-create-form" class="form-grid compact-form">
+          <div class="full"><h3>スタッフを新規作成</h3></div>
+          <label>表示名<input id="staff-display-name" maxlength="100" required autocomplete="name"></label>
+          <label>メールアドレス<input id="staff-email" type="email" maxlength="254" required autocomplete="email"></label>
+          <label>初期パスワード<input id="staff-password" type="password" minlength="10" required autocomplete="new-password"><small class="muted">10文字以上を設定してください。</small></label>
+          <label>権限<select id="staff-role"><option value="staff">スタッフ（登録・編集）</option><option value="viewer">閲覧者（閲覧のみ）</option></select></label>
+          <div class="form-actions full"><button class="primary" type="submit">アカウントを作成</button></div>
+          <p id="staff-create-message" class="message full" aria-live="polite"></p>
+        </form>
+        <div id="staff-list" class="staff-list" aria-live="polite"></div>
+        <p id="staff-list-message" class="message" aria-live="polite"></p>
+      </div>v>
+      
       <div id="observation-panel" class="panel hidden">
         <div class="detail-head">
           <button id="back-to-detail-button" class="secondary" type="button">← 猫詳細</button>
