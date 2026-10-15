@@ -244,19 +244,24 @@ ${label}
       return;
     }
     list.innerHTML = cats.map(cat => `
-      <article class="cat-card">
-        <div class="cat-thumb">🐱</div>
+      <article class="cat-card open-cat" data-id="${esc(cat.id)}" role="button" tabindex="0" aria-label="${esc(cat.name || "名前未登録")}の詳細を開く">
+        <div class="cat-thumb" aria-hidden="true">🐱</div>
         <div>
           <div class="cat-name">${esc(cat.name || "名前未登録")}</div>
           <div class="cat-meta">${esc(cat.management_no)} ・ ${esc(SEX_LABEL[cat.sex] || "不明")} ・ ${esc(cat.breed || "品種未登録")}</div>
           <div class="cat-meta">保護日 ${esc(formatDate(cat.rescued_date))}</div>
         </div>
-        <button class="secondary open-cat" data-id="${esc(cat.id)}" type="button">詳細</button>
       </article>
     `).join("");
-    list.querySelectorAll(".open-cat").forEach(btn =>
-      btn.addEventListener("click", () => openCat(btn.dataset.id))
-    );
+    list.querySelectorAll(".open-cat").forEach(card => {
+      card.addEventListener("click", () => openCat(card.dataset.id));
+      card.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openCat(card.dataset.id);
+        }
+      });
+    });
   }
 
   async function openCat(id) {
@@ -360,9 +365,13 @@ ${label}
             <div><strong>様子：</strong>${esc(o.behavior || "—")}</div>
             <div>${esc(o.memo || "")}</div>
             ${o.weight_kg ? `<div class="muted">体重 ${esc(o.weight_kg)} kg${o.temperature_c ? ` / 体温 ${esc(o.temperature_c)} ℃` : ""}</div>` : ""}
-            ${o.entry_type && o.entry_type !== "daily" ? `<div><strong>記録区分：</strong>${esc(o.entry_type === "rescue" ? "保護時" : "通常")}</div>` : ""}
+            ${o.entry_type && o.entry_type !== "daily" ? `<div><strong>記録区分：</strong>${esc(o.entry_type === "rescue" ? "保護時" : "死亡記録")}</div>` : ""}
             ${o.rescue_location ? `<div><strong>保護場所：</strong>${esc(o.rescue_location)}</div>` : ""}
             ${o.rescue_details ? `<div><strong>保護時の状況：</strong>${esc(o.rescue_details)}</div>` : ""}
+            ${o.death_date ? `<div><strong>死亡日：</strong>${esc(formatDate(o.death_date))}</div>` : ""}
+            ${o.death_cause ? `<div><strong>死因：</strong>${esc(o.death_cause)}</div>` : ""}
+            ${o.veterinary_hospital ? `<div><strong>動物病院：</strong>${esc(o.veterinary_hospital)}</div>` : ""}
+            ${o.death_note ? `<div><strong>死亡時メモ：</strong>${esc(o.death_note)}</div>` : ""}
             ${canEdit() ? `<div class="record-actions"><button type="button" class="secondary edit-observation-button" data-id="${esc(o.id)}">編集</button>${canEdit() ? `<button type="button" class="danger delete-observation-button" data-id="${esc(o.id)}">削除</button>` : ""}</div>` : ""}
           </div>
         `).join("") : '<div class="empty">観察日記はまだありません。</div>'}
@@ -507,6 +516,10 @@ ${label}
     $("obs-memo").value = observation?.memo || "";
     $("obs-rescue-location").value = observation?.rescue_location || "";
     $("obs-rescue-details").value = observation?.rescue_details || "";
+    $("obs-death-date").value = observation?.death_date || "";
+    $("obs-death-cause").value = observation?.death_cause || "";
+    $("obs-death-hospital").value = observation?.veterinary_hospital || "";
+    $("obs-death-note").value = observation?.death_note || "";
     const saveButton = document.querySelector('#observation-form button[type="submit"]');
     if (saveButton) saveButton.textContent = observation ? "観察日記を更新" : "観察日記を保存";
     message("observation-message", "");
@@ -517,7 +530,9 @@ ${label}
   function updateObservationTypeFields() {
     const type = $("obs-entry-type").value;
     $("obs-rescue-fields").classList.toggle("hidden", type !== "rescue");
+    $("obs-death-fields").classList.toggle("hidden", type !== "death");
     $("obs-daily-fields").classList.toggle("hidden", type !== "daily");
+    if (type === "death" && !$("obs-death-date").value) $("obs-death-date").value = $("obs-date").value || today();
   }
 
   async function saveObservation(e) {
@@ -529,6 +544,10 @@ ${label}
       entry_type: $("obs-entry-type").value,
       rescue_location: $("obs-rescue-location").value.trim(),
       rescue_details: $("obs-rescue-details").value.trim(),
+      death_date: $("obs-death-date").value || null,
+      death_cause: $("obs-death-cause").value.trim(),
+      veterinary_hospital: $("obs-death-hospital").value.trim(),
+      death_note: $("obs-death-note").value.trim(),
       observer_id: state.user.id,
       condition: $("obs-condition").value.trim(),
       appetite: $("obs-appetite").value.trim(),
@@ -540,6 +559,7 @@ ${label}
       memo: $("obs-memo").value.trim()
     };
     if (!payload.observation_date) return message("observation-message", "記録日を入力してください。", "error");
+    if (payload.entry_type === "death" && !payload.death_date) return message("observation-message", "死亡記録では死亡日を入力してください。", "error");
     let result;
     if (state.editingObservationId) {
       result = await state.supabase.from("observations").update(payload).eq("id", state.editingObservationId).eq("cat_id", state.selectedCat.id);
@@ -547,8 +567,12 @@ ${label}
       result = await state.supabase.from("observations").insert(payload);
     }
     if (result.error) return message("observation-message", result.error.message, "error");
+    if (payload.entry_type === "death") {
+      const statusUpdate = await state.supabase.from("cats").update({status: "deceased", updated_by: state.user.id}).eq("id", state.selectedCat.id);
+      if (statusUpdate.error) return message("observation-message", "観察日記は保存しましたが、猫の状態を死亡に変更できませんでした：" + statusUpdate.error.message, "error");
+    }
     state.editingObservationId = null;
-    toast("観察日記を保存しました");
+    toast(payload.entry_type === "death" ? "観察日記を保存しました" : "観察日記を保存しました");
     await openCat(state.selectedCat.id);
   }
 
@@ -934,9 +958,13 @@ ${label}
         o.behavior ? `様子：${o.behavior}` : "",
         o.weight_kg ? `体重：${o.weight_kg}kg` : "",
         o.temperature_c ? `体温：${o.temperature_c}℃` : "",
-        o.entry_type && o.entry_type !== "daily" ? `記録区分：${o.entry_type === "rescue" ? "保護時" : "通常"}` : "",
+        o.entry_type && o.entry_type !== "daily" ? `記録区分：${o.entry_type === "rescue" ? "保護時" : "死亡記録"}` : "",
         o.rescue_location ? `保護場所：${o.rescue_location}` : "",
         o.rescue_details ? `保護時の状況：${o.rescue_details}` : "",
+        o.death_date ? `死亡日：${formatDate(o.death_date)}` : "",
+        o.death_cause ? `死因：${o.death_cause}` : "",
+        o.veterinary_hospital ? `動物病院：${o.veterinary_hospital}` : "",
+        o.death_note ? `死亡時メモ：${o.death_note}` : "",
         o.memo || ""
       ].filter(Boolean);
       return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
