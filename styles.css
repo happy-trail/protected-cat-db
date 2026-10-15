@@ -162,8 +162,8 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 
 
 /* 個体情報記録票：Excel調整版に合わせたA4横1ページ帳票 */
-.individual-record { width:281mm; height:194mm; margin:0 auto; display:grid; grid-template-columns:calc((100% - 3mm)/2) calc((100% - 3mm)/2); column-gap:3mm; color:#111; background:#fff; font-family:"Noto Sans JP","Yu Gothic",sans-serif; font-size:8.5pt; line-height:1.25; }
-.record-left,.record-right { min-width:0; height:194mm; border:1px solid #222; display:flex; flex-direction:column; }
+.individual-record { width:281mm; height:182mm; margin:0 auto; display:grid; grid-template-columns:calc((100% - 3mm)/2) calc((100% - 3mm)/2); column-gap:3mm; color:#111; background:#fff; font-family:"Noto Sans JP","Yu Gothic",sans-serif; font-size:8.5pt; line-height:1.25; }
+.record-left,.record-right { min-width:0; height:182mm; border:1px solid #222; display:flex; flex-direction:column; }
 .record-left { border-right:1px solid #222; }
 .record-profile { display:grid; grid-template-columns:35% 65%; height:94mm; min-height:94mm; }
 .record-photo-wrap { border-right:1px solid #222; border-bottom:1px solid #222; min-width:0; min-height:0; display:flex; flex-direction:column; }
@@ -189,13 +189,15 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-diary-row { position:relative; z-index:1; background:#fff; }
 .record-death { display:flex; align-items:center; flex:0 0 9mm; height:9mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm 1.5mm 20mm; min-height:9mm; font-size:8pt; overflow-wrap:anywhere; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .record-right { position:relative; }
-.record-adoption { box-sizing:border-box; height:20mm; min-height:20mm; flex:0 0 20mm; border-bottom:1px solid #222; }
+.record-adoption { box-sizing:border-box; height:32mm; min-height:32mm; flex:0 0 32mm; border-bottom:1px solid #222; }
 .record-adoption-title { padding:2mm; min-height:9mm; font-weight:700; border-bottom:1px solid #222; }
-.record-adoption-content { padding:1mm 3mm; display:grid; gap:1.5mm; }
-.record-adoption-content > div { display:grid; grid-template-columns:20mm 1fr; min-height:6mm; border-bottom:1px solid #aaa; }
-.record-adoption-content b { font-weight:600; }
+.record-adoption-content { padding:1.5mm 3mm; display:flex; flex-direction:column; gap:1mm; }
+.record-adoption-content > div { display:flex; flex-direction:column; min-height:0; border-bottom:1px solid #aaa; padding-bottom:1mm; }
+.record-adoption-content b { display:block; font-weight:600; }
+.record-adoption-content span { display:block; min-height:4mm; padding-top:.5mm; overflow-wrap:anywhere; }
+.record-right::before { content:""; position:absolute; left:17.8mm; top:0; bottom:0; width:.2mm; background:#777; z-index:3; pointer-events:none; }
 .record-continuation { flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column; position:relative; }
-.record-continuation-lines { position:absolute; left:0; right:0; top:0; bottom:-8mm; z-index:0; min-height:0; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); pointer-events:none; }
+.record-continuation-lines { position:absolute; left:0; right:0; top:0; bottom:-8mm; z-index:0; min-height:0; background:repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm),#aaa calc(7mm - .2mm),#aaa 7mm); pointer-events:none; }
 .record-continuation .record-diary-row { flex:0 0 auto; z-index:1; background:#fff; }
 .record-continuation .record-diary-content { overflow-wrap:anywhere; white-space:normal; }
 .record-continuation:not(.has-diary-continuation) { border-top:1px solid #222; }
@@ -203,10 +205,10 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-bottom-number { display:flex; align-items:center; justify-content:flex-end; flex:0 0 8mm; height:8mm; box-sizing:border-box; border-top:1px solid #aaa; padding:1.5mm 2mm; min-height:8mm; text-align:right; position:relative; z-index:2; background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), #fff; }
 .health-actions { display:flex; gap:12px; align-items:center; margin:8px auto; max-width:281mm; font-size:14px; }
 @media print {
-  @page { size:A4 landscape; margin:0; }
-  html,body { width:281mm !important; height:194mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
+  @page { size:A4 landscape; margin:20mm 8mm 8mm; }
+  html,body { width:281mm !important; height:182mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
   .health-actions { display:none !important; }
-  .individual-record { width:281mm; height:194mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
+  .individual-record { width:281mm; height:182mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
 }
 
 /* 管理者による削除操作 */

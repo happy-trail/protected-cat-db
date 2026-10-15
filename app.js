@@ -1000,8 +1000,8 @@ ${label}
         <div class="record-right">
           <div class="record-adoption">
             <div class="record-adoption-content">
-              <div><b>譲渡日</b><span>${transfer ? esc(formatDate(transfer.transfer_date)) : ""}</span></div>
-              <div><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
+              <div class="record-transfer-date"><b>譲渡日</b><span>${transfer ? esc(formatDate(transfer.transfer_date)) : ""}</span></div>
+              <div class="record-transfer-recipient"><b>譲渡先</b><span>${transfer ? esc(transfer.recipient_name || "") : ""}</span></div>
             </div>
           </div>
           <div class="record-continuation" aria-label="観察日記の記入欄"><div class="record-continuation-lines" aria-hidden="true"></div></div>
@@ -1022,7 +1022,7 @@ ${label}
       return;
     }
     printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>個体情報記録票</title><link rel="stylesheet" href="${new URL("styles.css", location.href).href}"><style>html,body{margin:0;padding:0;background:#fff!important}body{width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}.health-actions{display:none!important}@page{size:A4 landscape;margin:8mm}@media print{html,body{width:281mm!important;height:194mm!important;margin:0!important;padding:0!important}.individual-record{width:281mm!important;height:194mm!important;margin:0!important;break-inside:avoid;page-break-inside:avoid}}</style></head><body><p style="font:14px sans-serif;padding:16px">帳票を準備しています…</p></body></html>`);
+    printWindow.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>個体情報記録票</title><link rel="stylesheet" href="${new URL("styles.css", location.href).href}"><style>html,body{margin:0;padding:0;background:#fff!important}body{width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}.health-actions{display:none!important}@page{size:A4 landscape;margin:20mm 8mm 8mm}@media print{html,body{width:281mm!important;height:182mm!important;margin:0!important;padding:0!important}.individual-record{width:281mm!important;height:182mm!important;margin:0!important;break-inside:avoid;page-break-inside:avoid}}</style></head><body><p style="font:14px sans-serif;padding:16px">帳票を準備しています…</p></body></html>`);
     printWindow.document.close();
 
     let photoUrl = "";
