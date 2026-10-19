@@ -1075,6 +1075,31 @@ ${label}
     printWindow.print();
   }
 
+async function testCatPhotoProxy() {
+  const { data, error } =
+    await state.supabase.functions.invoke(
+      "cat-photo-proxy",
+      { body: {} }
+    );
+
+  if (error) {
+    let detail = error.message || "呼び出しに失敗しました。";
+    try {
+      const context = error.context;
+      if (context?.json) {
+        const body = await context.json();
+        if (body?.error) detail = body.error;
+      }
+    } catch (_) {}
+    throw new Error(detail);
+  }
+
+  if (data?.error) throw new Error(data.error);
+
+  console.log("cat-photo-proxy テスト結果:", data);
+  return data;
+}
+
   async function callStaffAdmin(payload) {
     if (!isAdmin()) throw new Error("スタッフ管理は管理者のみ利用できます。");
     const { data, error } = await state.supabase.functions.invoke("cat-user-admin", { body: payload });
