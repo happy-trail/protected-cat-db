@@ -102,7 +102,9 @@
     $("connection-status").textContent = "Supabase接続準備完了";
     return true;
   }
-
+  
+  window.__catDbSupabase = state.supabase;
+  
   async function loadSession() {
     if (!state.supabase) return;
     const { data, error } = await state.supabase.auth.getSession();
