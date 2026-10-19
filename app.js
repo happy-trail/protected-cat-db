@@ -103,8 +103,6 @@
     return true;
   }
   
-  window.__catDbSupabase = state.supabase;
-  
   async function loadSession() {
     if (!state.supabase) return;
     const { data, error } = await state.supabase.auth.getSession();
@@ -1235,6 +1233,8 @@ ${label}
   }
 
   async function init() {
+    window.__catDbSupabase = state.supabase;
+  
     setupEvents();
     setupInstall();
     initGoogleDrive();
