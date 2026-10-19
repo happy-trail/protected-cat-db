@@ -1112,6 +1112,28 @@ async function testCatPhotoProxy() {
     return data;
   }
 
+  async function testCatPhotoProxy() {
+    if (!state.supabase) {
+      throw new Error("Supabaseが初期化されていません。");
+    }
+  
+    const { data, error } =
+      await state.supabase.functions.invoke(
+        "cat-photo-proxy",
+        { body: {} }
+      );
+  
+    if (error) {
+      console.error("cat-photo-proxy 呼び出しエラー:", error);
+      throw new Error(
+        error.message || "写真プロキシの呼び出しに失敗しました。"
+      );
+    }
+  
+    console.log("cat-photo-proxy テスト結果:", data);
+    return data;
+  }
+
   function openStaffManagement() {
     if (!isAdmin()) return toast("スタッフ管理は管理者のみ利用できます。");
     panel("staff-management-panel");
@@ -1207,6 +1229,27 @@ async function testCatPhotoProxy() {
     $("staff-management-button").addEventListener("click", openStaffManagement);
     $("staff-back-button").addEventListener("click", () => { panel("list-panel"); $("page-title").textContent = "猫一覧"; });
     $("staff-refresh-button").addEventListener("click", () => loadStaffList().catch(e => message("staff-list-message", e.message || String(e), "error")));
+    $("cat-photo-proxy-test-button").addEventListener("click", async () => {
+      const button = $("cat-photo-proxy-test-button");
+      button.disabled = true;
+    
+      try {
+        const data = await testCatPhotoProxy();
+        message(
+          "cat-photo-proxy-test-message",
+          `認証テスト成功：${data?.message || "応答を受信しました"}`,
+          "success"
+        );
+      } catch (e) {
+        message(
+          "cat-photo-proxy-test-message",
+          e.message || String(e),
+          "error"
+        );
+      } finally {
+        button.disabled = false;
+      }
+    });
     $("staff-create-form").addEventListener("submit", createStaffAccount);
     $("refresh-button").addEventListener("click", () => loadCats().catch(err => toast(err.message)));
     $("logout-button").addEventListener("click", async () => {
