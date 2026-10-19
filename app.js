@@ -1233,8 +1233,6 @@ ${label}
   }
 
   async function init() {
-    window.__catDbSupabase = state.supabase;
-  
     setupEvents();
     setupInstall();
     initGoogleDrive();
