@@ -1250,6 +1250,61 @@ async function testCatPhotoProxy() {
         button.disabled = false;
       }
     });
+    
+    $("google-drive-connect-button").addEventListener("click", async () => {
+      const button = $("google-drive-connect-button");
+      button.disabled = true;
+    
+      try {
+        if (!isAdmin()) {
+          throw new Error("管理者のみGoogle Driveを接続できます。");
+        }
+    
+        const { data, error } = await state.supabase.functions.invoke(
+          "google-drive-oauth-start",
+          { body: {} }
+        );
+    
+        if (error) {
+          let detail = error.message || "接続開始に失敗しました。";
+          try {
+            if (error.context?.json) {
+              const body = await error.context.json();
+              if (body?.error) detail = body.error;
+            }
+          } catch (_) {}
+          throw new Error(detail);
+        }
+    
+        if (!data?.authorization_url) {
+          throw new Error(data?.error || "Googleの認証URLを取得できませんでした。");
+        }
+    
+        const authUrl = new URL(data.authorization_url);
+        if (
+          authUrl.protocol !== "https:" ||
+          authUrl.hostname !== "accounts.google.com"
+        ) {
+          throw new Error("認証URLが正しくありません。");
+        }
+    
+        message(
+          "google-drive-connect-message",
+          "Googleの認証画面を開きます。",
+          "success"
+        );
+    
+        window.location.assign(authUrl.href);
+      } catch (e) {
+        message(
+          "google-drive-connect-message",
+          e.message || String(e),
+          "error"
+        );
+        button.disabled = false;
+      }
+    });
+
     $("staff-create-form").addEventListener("submit", createStaffAccount);
     $("refresh-button").addEventListener("click", () => loadCats().catch(err => toast(err.message)));
     $("logout-button").addEventListener("click", async () => {
