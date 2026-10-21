@@ -223,6 +223,9 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
   .record-diary-title { flex-shrink:0 !important; }
   /* 観察日記全体に縦線を重ねる。データ行が白背景でも、空欄部分を含めて線が途切れない */
   .record-diary { position:relative !important; }
+  /* 左グループ全体を基準に、観察日記タイトル直下から表の最下端まで縦線を伸ばす */
+  .record-left { position:relative !important; }
+  .record-left::after { content:"" !important; position:absolute !important; top:102mm !important; bottom:0 !important; left:18mm !important; width:0 !important; border-left:1px solid #777 !important; z-index:6 !important; pointer-events:none !important; }
   .record-diary::after { content:"" !important; position:absolute !important; top:0 !important; bottom:0 !important; left:18mm !important; width:0 !important; height:auto !important; border-left:1px solid #777 !important; z-index:5 !important; pointer-events:none !important; }
   /* 印刷プレビューでも左側の観察日記「日付／本文」区切り線を保持 */
   .record-diary-row { grid-template-columns:18mm minmax(0,1fr) !important; }
