@@ -173,8 +173,6 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 .record-photo-empty { display:grid; place-items:center; color:#777; background:#fafafa; width:100%; height:100%; }
 .record-facts { min-width:0; min-height:0; display:flex; flex-direction:column; }
 .record-field { display:grid; grid-template-columns:54% 46%; flex:1; min-height:0; border-bottom:1px solid #555; }
-/* 写真下に左グループ幅で現れる不要な横線を避け、観察日記タイトルの上罫線を境界として使う */
-.record-facts > .record-field:last-child { border-bottom:0; }
 .record-field b,.record-field span { padding:1mm 1.3mm; display:flex; align-items:center; justify-content:center; text-align:center; overflow-wrap:anywhere; }
 .record-field b { border-right:1px solid #555; font-weight:600; }
 .record-management { flex:0 0 9mm; }
@@ -216,6 +214,13 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
   html,body { width:281mm !important; height:175mm !important; margin:0 !important; padding:0 !important; background:#fff !important; }
   .health-actions { display:none !important; }
   .individual-record { width:281mm; height:175mm; margin:0; break-inside:avoid; page-break-inside:avoid; }
+  /* 印刷プレビュー時の高さ計算で写真欄が押し出されないよう、写真・基本情報ブロックの寸法を固定 */
+  .record-left,.record-right { box-sizing:border-box !important; }
+  .record-profile { box-sizing:border-box !important; height:94mm !important; min-height:94mm !important; flex:0 0 94mm !important; overflow:hidden !important; }
+  .record-photo-wrap { box-sizing:border-box !important; height:100% !important; min-height:0 !important; border-bottom:0 !important; }
+  .record-photo-frame { box-sizing:border-box !important; min-height:0 !important; overflow:hidden !important; }
+  .record-photo { width:100% !important; height:100% !important; object-fit:contain !important; }
+  .record-diary-title { flex-shrink:0 !important; }
 }
 
 /* 管理者による削除操作 */
