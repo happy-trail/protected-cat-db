@@ -184,10 +184,24 @@ ${label}
 この操作は元に戻せません。よろしいですか？`)) return;
     try {
       if (file.drive_file_id) {
-        const response = await driveApi(`files/${encodeURIComponent(file.drive_file_id)}`, {method:"DELETE"});
-        if (!response.ok && response.status !== 404) {
-          const detail = await response.text();
-          throw new Error(`Google Drive削除失敗 (${response.status})：${detail.slice(0, 180)}`);
+        const { data: sessionData, error: sessionError } = await state.supabase.auth.getSession();
+        if (sessionError || !sessionData?.session?.access_token) {
+          throw new Error("ログインし直してください。");
+        }
+        const response = await fetch(`${cfg.supabaseUrl}/functions/v1/cat-photo-delete`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${sessionData.session.access_token}`,
+            "apikey": cfg.supabaseAnonKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ cat_file_id: file.id }),
+          cache: "no-store",
+        });
+        let result = {};
+        try { result = await response.json(); } catch (_) {}
+        if (!response.ok) {
+          throw new Error(result?.error || `写真削除失敗 (${response.status})`);
         }
       }
       const { error } = await state.supabase.from("cat_files").delete().eq("id", file.id).eq("cat_id", cat.id);
