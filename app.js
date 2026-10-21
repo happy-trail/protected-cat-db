@@ -940,20 +940,29 @@ ${label}
   }
 
   async function uploadSelectedPhotos(files) {
-    if (!state.selectedCat) return;
+    if (!state.selectedCat || !files.length) return;
     try {
-      await ensureGoogleToken();
-      setDriveMessage(`${files.length}枚をアップロード中…`);
+      // OAuth popup must be initiated by a direct user action. Do not start it
+      // after the file-picker change event, where browsers may block it silently.
+      if (!state.googleToken) {
+        setDriveMessage("先に「Google Drive接続」を押して認証してください。その後、もう一度写真を選んでください。", "error");
+        return;
+      }
+
+      setDriveMessage(`${files.length}枚の写真をアップロード中…`);
       for (let i=0; i<files.length; i++) {
+        setDriveMessage(`${i + 1}/${files.length}枚目をアップロード中…`);
         const driveFile = await uploadPhotoToDrive(files[i], state.selectedCat);
         // 最初の画像を代表写真にする
         await saveDriveMetadata(state.selectedCat, driveFile, files[i], i === 0 && state.selectedCat.files.length === 0);
       }
+      setDriveMessage("写真を保存しました。表示を更新しています…", "success");
       toast("Google Driveへ写真を保存しました");
       await openCat(state.selectedCat.id);
       renderDriveFiles();
+      setDriveMessage("Google Driveへ写真を保存しました。", "success");
     } catch (e) {
-      setDriveMessage(e.message || String(e), "error");
+      setDriveMessage(`写真を追加できませんでした: ${e?.message || String(e)}`, "error");
     }
   }
 
@@ -1304,10 +1313,17 @@ ${label}
     $("obs-entry-type").addEventListener("change", updateObservationTypeFields);
     $("print-button").addEventListener("click", printHealthForm);
     $("google-connect-button").addEventListener("click", async () => {
+      const btn = $("google-connect-button");
       try {
+        if (btn) btn.disabled = true;
+        setDriveMessage("Google認証を開始しています…");
         await ensureGoogleToken();
-        setDriveMessage("Google Driveに接続しました。", "success");
-      } catch (e) { setDriveMessage(e.message || String(e), "error"); }
+        setDriveMessage("Google Driveに接続しました。続けて「写真を追加」を押してください。", "success");
+      } catch (e) {
+        setDriveMessage(`Google Driveに接続できませんでした: ${e?.message || String(e)}`, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     });
     $("photo-input").addEventListener("change", e => {
       const files = [...e.target.files];
