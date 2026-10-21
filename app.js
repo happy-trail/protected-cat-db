@@ -295,25 +295,57 @@ ${label}
 
   async function loadDriveImageUrl(driveFileId) {
     if (!driveFileId) return "";
+  
     state.driveImageUrls = state.driveImageUrls || {};
-    if (state.driveImageUrls[driveFileId]) return state.driveImageUrls[driveFileId];
-
-    const token = await ensureGoogleToken();
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(driveFileId)}?alt=media`, {
-      method: "GET",
-      headers: { "Authorization": `Bearer ${token}` },
-      cache: "no-store"
-    });
+  
+    if (state.driveImageUrls[driveFileId]) {
+      return state.driveImageUrls[driveFileId];
+    }
+  
+    const { data: sessionData, error: sessionError } =
+      await state.supabase.auth.getSession();
+  
+    if (sessionError || !sessionData?.session?.access_token) {
+      throw new Error("ログインし直してください。");
+    }
+  
+    const response = await fetch(
+      `${cfg.supabaseUrl}/functions/v1/cat-photo-proxy`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+          apikey: cfg.supabaseAnonKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          drive_file_id: driveFileId,
+        }),
+        cache: "no-store",
+      },
+    );
+  
     if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`写真取得失敗 (${response.status}): ${body.slice(0, 300)}`);
+      let detail = "";
+      try {
+        const result = await response.json();
+        detail = result?.error || "";
+      } catch (_) {}
+  
+      throw new Error(
+        `写真取得失敗 (${response.status})${detail ? `: ${detail}` : ""}`,
+      );
     }
+  
     const blob = await response.blob();
+  
     if (!blob.type.startsWith("image/")) {
-      throw new Error(`画像ではないデータが返りました: ${blob.type || "unknown"}`);
+      throw new Error("画像データではありません。");
     }
+  
     const url = URL.createObjectURL(blob);
     state.driveImageUrls[driveFileId] = url;
+  
     return url;
   }
 
