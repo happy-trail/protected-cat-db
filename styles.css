@@ -220,6 +220,10 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
   .record-photo-wrap { box-sizing:border-box !important; height:100% !important; min-height:0 !important; border-bottom:0 !important; }
   .record-photo-frame { box-sizing:border-box !important; min-height:0 !important; overflow:hidden !important; }
   .record-photo { width:100% !important; height:100% !important; object-fit:contain !important; }
+  /* 印刷プレビューでも観察日記の日付欄と本文欄の縦区切り線を明示的に描画 */
+  .record-diary-row { display:grid !important; grid-template-columns:18mm minmax(0,1fr) !important; }
+  .record-diary-date { box-sizing:border-box !important; border-right:1px solid #777 !important; position:relative !important; z-index:2 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .record-diary-empty { background:linear-gradient(to right, transparent 0, transparent 17.8mm, #777 17.8mm, #777 18mm, transparent 18mm), repeating-linear-gradient(to bottom, transparent 0, transparent calc(7mm - .2mm), #aaa calc(7mm - .2mm), #aaa 7mm) !important; }
   .record-diary-title { flex-shrink:0 !important; }
 }
 
