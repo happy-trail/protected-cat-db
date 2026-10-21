@@ -881,28 +881,26 @@ ${label}
 
   async function uploadPhotoToDrive(file, cat) {
     if (!file.type.startsWith("image/")) throw new Error("画像ファイルを選択してください。");
-    const folder = await getOrCreateDriveFolder(cat);
-    const metadata = {
-      name: `${new Date().toISOString().replace(/[:.]/g,"-")}_${file.name}`,
-      parents: [folder.id],
-      description: `保護猫DB ${cat.management_no} ${cat.name || ""}`
-    };
-    const boundary = "catdb_" + crypto.randomUUID();
-    const body = new Blob([
-      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`,
-      JSON.stringify(metadata), "\r\n",
-      `--${boundary}\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n`,
-      file, "\r\n",
-      `--${boundary}--`
-    ]);
-    const token = await ensureGoogleToken();
-    const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,webViewLink,parents", {
-      method:"POST",
-      headers:{"Authorization": `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${boundary}`},
-      body
+    if (file.size > 15 * 1024 * 1024) throw new Error("写真のサイズは15MB以下にしてください。");
+    const { data: sessionData, error: sessionError } = await state.supabase.auth.getSession();
+    if (sessionError || !sessionData?.session?.access_token) throw new Error("ログインし直してください。");
+    const form = new FormData();
+    form.append("cat_id", cat.id);
+    form.append("file", file, file.name);
+    const response = await fetch(`${cfg.supabaseUrl}/functions/v1/cat-photo-upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionData.session.access_token}`,
+        apikey: cfg.supabaseAnonKey,
+      },
+      body: form,
+      cache: "no-store",
     });
-    if (!response.ok) throw new Error(`Driveアップロード失敗: ${await response.text()}`);
-    return await response.json();
+    let result = {};
+    try { result = await response.json(); } catch (_) {}
+    if (!response.ok) throw new Error(result?.error || `写真アップロード失敗 (${response.status})`);
+    if (!result?.id) throw new Error("アップロード結果を確認できませんでした。");
+    return result;
   }
 
   async function saveDriveMetadata(cat, driveFile, file, isMain) {
@@ -941,27 +939,25 @@ ${label}
 
   async function uploadSelectedPhotos(files) {
     if (!state.selectedCat || !files.length) return;
+    if (!canEdit()) {
+      setDriveMessage("写真の追加はスタッフ・管理者のみ利用できます。", "error");
+      return;
+    }
+    const catId = state.selectedCat.id;
     try {
-      // OAuth popup must be initiated by a direct user action. Do not start it
-      // after the file-picker change event, where browsers may block it silently.
-      if (!state.googleToken) {
-        setDriveMessage("先に「Google Drive接続」を押して認証してください。その後、もう一度写真を選んでください。", "error");
-        return;
-      }
-
-      setDriveMessage(`${files.length}枚の写真をアップロード中…`);
-      for (let i=0; i<files.length; i++) {
-        setDriveMessage(`${i + 1}/${files.length}枚目をアップロード中…`);
+      setDriveMessage(`${files.length}枚の写真を準備しています…`);
+      for (let i = 0; i < files.length; i++) {
+        setDriveMessage(`${i + 1}/${files.length}枚目をGoogle Driveへ保存中…`);
         const driveFile = await uploadPhotoToDrive(files[i], state.selectedCat);
-        // 最初の画像を代表写真にする
         await saveDriveMetadata(state.selectedCat, driveFile, files[i], i === 0 && state.selectedCat.files.length === 0);
       }
       setDriveMessage("写真を保存しました。表示を更新しています…", "success");
       toast("Google Driveへ写真を保存しました");
-      await openCat(state.selectedCat.id);
+      await openCat(catId);
       renderDriveFiles();
       setDriveMessage("Google Driveへ写真を保存しました。", "success");
     } catch (e) {
+      console.error("Photo upload failed", e);
       setDriveMessage(`写真を追加できませんでした: ${e?.message || String(e)}`, "error");
     }
   }
@@ -1312,19 +1308,6 @@ ${label}
     $("observation-form").addEventListener("submit", saveObservation);
     $("obs-entry-type").addEventListener("change", updateObservationTypeFields);
     $("print-button").addEventListener("click", printHealthForm);
-    $("google-connect-button").addEventListener("click", async () => {
-      const btn = $("google-connect-button");
-      try {
-        if (btn) btn.disabled = true;
-        setDriveMessage("Google認証を開始しています…");
-        await ensureGoogleToken();
-        setDriveMessage("Google Driveに接続しました。続けて「写真を追加」を押してください。", "success");
-      } catch (e) {
-        setDriveMessage(`Google Driveに接続できませんでした: ${e?.message || String(e)}`, "error");
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    });
     $("photo-input").addEventListener("change", e => {
       const files = [...e.target.files];
       if (files.length) {
@@ -1353,7 +1336,7 @@ ${label}
   async function init() {
     setupEvents();
     setupInstall();
-    initGoogleDrive();
+    initGoogleDrive(); // 既存の写真削除処理との互換性を維持
 
     if ("serviceWorker" in navigator) {
       try { await navigator.serviceWorker.register("./sw.js"); } catch (_) {}
