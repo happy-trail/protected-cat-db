@@ -20,7 +20,9 @@
     editingMedicalType: null,
     deferredInstall: null,
     googleToken: null,
-    googleTokenClient: null
+    googleTokenClient: null,
+    googleTokenResolve: null,
+    googleTokenReject: null
   };
 
   const STATUS_LABEL = {
@@ -789,26 +791,38 @@ ${label}
   }
 
   function initGoogleDrive() {
-    if (!driveConfigured()) return;
+    if (!driveConfigured()) {
+      setDriveMessage("Google Driveの設定が見つかりません。管理者に設定を確認してもらってください。", "error");
+      return;
+    }
     loadStoredGoogleToken();
     if (!window.google?.accounts?.oauth2) {
       setTimeout(initGoogleDrive, 700);
       return;
     }
-    state.googleTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: window.CAT_DB_CONFIG.googleClientId,
-      scope: "https://www.googleapis.com/auth/drive.file",
-      callback: (response) => {
-        if (response.error) {
-          setDriveMessage(`Google接続エラー: ${response.error}`, "error");
-          return;
+    if (!state.googleTokenClient) {
+      state.googleTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: window.CAT_DB_CONFIG.googleClientId,
+        scope: "https://www.googleapis.com/auth/drive.file",
+        callback: (response) => {
+          if (response.error) {
+            const error = new Error(`Google接続エラー: ${response.error}`);
+            setDriveMessage(error.message, "error");
+            if (state.googleTokenReject) state.googleTokenReject(error);
+            state.googleTokenResolve = null;
+            state.googleTokenReject = null;
+            return;
+          }
+          storeGoogleToken(response);
+          setDriveMessage("Google Driveに接続しました。", "success");
+          const btn = $("google-connect-button");
+          if (btn) btn.textContent = "Google Drive接続済み";
+          if (state.googleTokenResolve) state.googleTokenResolve(response.access_token);
+          state.googleTokenResolve = null;
+          state.googleTokenReject = null;
         }
-        storeGoogleToken(response);
-        setDriveMessage("Google Driveに接続しました。", "success");
-        const btn = $("google-connect-button");
-        if (btn) btn.textContent = "Google Drive接続済み";
-      }
-    });
+      });
+    }
     if (state.googleToken) {
       const btn = $("google-connect-button");
       if (btn) btn.textContent = "Google Drive接続済み";
@@ -816,25 +830,23 @@ ${label}
   }
 
   function ensureGoogleToken() {
+    if (state.googleToken) return Promise.resolve(state.googleToken);
+    if (!state.googleTokenClient) initGoogleDrive();
+    if (!state.googleTokenClient) {
+      return Promise.reject(new Error("Google認証の準備中です。数秒待ってからもう一度お試しください。"));
+    }
+    if (state.googleTokenResolve) {
+      return Promise.reject(new Error("Google認証を処理中です。完了してからもう一度お試しください。"));
+    }
     return new Promise((resolve, reject) => {
-      if (state.googleToken) return resolve(state.googleToken);
-      if (!state.googleTokenClient) {
-        initGoogleDrive();
-        return reject(new Error("Google Driveに接続してください。"));
-      }
-
-      const client = state.googleTokenClient;
-      const original = client.callback;
-      client.callback = (response) => {
-        client.callback = original;
-        if (response.error) return reject(new Error(response.error));
-        storeGoogleToken(response);
-        resolve(response.access_token);
-      };
+      state.googleTokenResolve = resolve;
+      state.googleTokenReject = reject;
       try {
-        client.requestAccessToken({ prompt: "" });
+        state.googleTokenClient.requestAccessToken({ prompt: "" });
       } catch (e) {
-        client.callback = original;
+        state.googleTokenResolve = null;
+        state.googleTokenReject = null;
+        setDriveMessage(e.message || String(e), "error");
         reject(e);
       }
     });
@@ -1299,7 +1311,10 @@ ${label}
     });
     $("photo-input").addEventListener("change", e => {
       const files = [...e.target.files];
-      if (files.length) uploadSelectedPhotos(files);
+      if (files.length) {
+        setDriveMessage(`${files.length}枚の写真を準備しています…`);
+        uploadSelectedPhotos(files);
+      }
       e.target.value = "";
     });
   }
