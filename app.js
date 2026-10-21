@@ -283,28 +283,49 @@ ${label}
   }
 
   async function openCat(id) {
-    const { data, error } = await state.supabase
-      .from("cats")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) return toast(error.message);
-
-    const [observations, files] = await Promise.all([
-      state.supabase.from("observations").select("*").eq("cat_id", id).order("observation_date", {ascending:false}).order("created_at", {ascending:false}),
-      state.supabase.from("cat_files").select("*").eq("cat_id", id).order("is_main_photo", {ascending:false}).order("taken_at", {ascending:false})
-    ]);
-
-    state.selectedCat = {
-      ...data,
-      vaccinations: [], virusTests: [], surgeries: [],
-      observations: observations.data || [],
-      transfers: [],
-      files: files.data || []
-    };
-    renderDetail();
-    updateRoleControls();
+    // 詳細画面を先に開き、データ・写真の取得中であることを表示する
     panel("detail-panel");
+    $("cat-detail").innerHTML = `
+      <div class="detail-loading" role="status" aria-live="polite">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <div><strong>猫の詳細を読み込み中です…</strong><p>写真や記録を取得しています。少しお待ちください。</p></div>
+      </div>`;
+    const dc = $("drive-controls");
+    if (dc) dc.classList.add("hidden");
+
+    try {
+      const { data, error } = await state.supabase
+        .from("cats")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+
+      const [observations, files] = await Promise.all([
+        state.supabase.from("observations").select("*").eq("cat_id", id).order("observation_date", {ascending:false}).order("created_at", {ascending:false}),
+        state.supabase.from("cat_files").select("*").eq("cat_id", id).order("is_main_photo", {ascending:false}).order("taken_at", {ascending:false})
+      ]);
+      if (observations.error) throw observations.error;
+      if (files.error) throw files.error;
+
+      state.selectedCat = {
+        ...data,
+        vaccinations: [], virusTests: [], surgeries: [],
+        observations: observations.data || [],
+        transfers: [],
+        files: files.data || []
+      };
+      await renderDetail();
+      updateRoleControls();
+    } catch (error) {
+      $("cat-detail").innerHTML = `
+        <div class="detail-load-error" role="alert">
+          <strong>猫の詳細を読み込めませんでした。</strong>
+          <p>${esc(error?.message || "通信状態を確認してください。")}</p>
+          <button id="retry-cat-detail" type="button" class="secondary">もう一度読み込む</button>
+        </div>`;
+      $("retry-cat-detail")?.addEventListener("click", () => openCat(id));
+    }
   }
 
   function latest(arr) { return arr?.[0] || null; }
