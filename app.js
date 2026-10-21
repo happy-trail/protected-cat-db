@@ -1107,31 +1107,6 @@ ${label}
     printWindow.print();
   }
 
-async function testCatPhotoProxy() {
-  const { data, error } =
-    await state.supabase.functions.invoke(
-      "cat-photo-proxy",
-      { body: {} }
-    );
-
-  if (error) {
-    let detail = error.message || "呼び出しに失敗しました。";
-    try {
-      const context = error.context;
-      if (context?.json) {
-        const body = await context.json();
-        if (body?.error) detail = body.error;
-      }
-    } catch (_) {}
-    throw new Error(detail);
-  }
-
-  if (data?.error) throw new Error(data.error);
-
-  console.log("cat-photo-proxy テスト結果:", data);
-  return data;
-}
-
   async function callStaffAdmin(payload) {
     if (!isAdmin()) throw new Error("スタッフ管理は管理者のみ利用できます。");
     const { data, error } = await state.supabase.functions.invoke("cat-user-admin", { body: payload });
@@ -1141,28 +1116,6 @@ async function testCatPhotoProxy() {
       throw new Error(detail);
     }
     if (data?.error) throw new Error(data.error);
-    return data;
-  }
-
-  async function testCatPhotoProxy() {
-    if (!state.supabase) {
-      throw new Error("Supabaseが初期化されていません。");
-    }
-  
-    const { data, error } =
-      await state.supabase.functions.invoke(
-        "cat-photo-proxy",
-        { body: {} }
-      );
-  
-    if (error) {
-      console.error("cat-photo-proxy 呼び出しエラー:", error);
-      throw new Error(
-        error.message || "写真プロキシの呼び出しに失敗しました。"
-      );
-    }
-  
-    console.log("cat-photo-proxy テスト結果:", data);
     return data;
   }
 
@@ -1261,28 +1214,6 @@ async function testCatPhotoProxy() {
     $("staff-management-button").addEventListener("click", openStaffManagement);
     $("staff-back-button").addEventListener("click", () => { panel("list-panel"); $("page-title").textContent = "猫一覧"; });
     $("staff-refresh-button").addEventListener("click", () => loadStaffList().catch(e => message("staff-list-message", e.message || String(e), "error")));
-    $("cat-photo-proxy-test-button").addEventListener("click", async () => {
-      const button = $("cat-photo-proxy-test-button");
-      button.disabled = true;
-    
-      try {
-        const data = await testCatPhotoProxy();
-        message(
-          "cat-photo-proxy-test-message",
-          `認証テスト成功：${data?.message || "応答を受信しました"}`,
-          "success"
-        );
-      } catch (e) {
-        message(
-          "cat-photo-proxy-test-message",
-          e.message || String(e),
-          "error"
-        );
-      } finally {
-        button.disabled = false;
-      }
-    });
-    
     $("google-drive-connect-button").addEventListener("click", async () => {
       const button = $("google-drive-connect-button");
       button.disabled = true;
@@ -1334,6 +1265,7 @@ async function testCatPhotoProxy() {
           "error"
         );
         button.disabled = false;
+        button.textContent = "Google Drive接続／再認証";
       }
     });
 
