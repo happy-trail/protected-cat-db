@@ -140,6 +140,8 @@
     if (editCatButton) editCatButton.classList.toggle("hidden", !editable);
     const staffButton = $("staff-management-button");
     if (staffButton) staffButton.classList.toggle("hidden", !isAdmin());
+    const printButton = $("print-button");
+    if (printButton) printButton.classList.toggle("hidden", state.profile?.role === "viewer");
   }
 
   function canEdit() {
@@ -293,6 +295,8 @@ ${label}
     const q = $("search-input").value.trim().toLowerCase();
     const status = $("status-filter").value;
     return state.cats.filter(cat => {
+      // 閲覧者には保護中の猫だけを表示する（検索・状態フィルターでも制限を解除しない）
+      if (state.profile?.role === "viewer" && cat.status !== "protected") return false;
       const hay = `${cat.management_no} ${cat.name} ${cat.breed}`.toLowerCase();
       return (!q || hay.includes(q)) && (!status || cat.status === status);
     });
