@@ -287,3 +287,21 @@ main { width: min(1100px, 100%); margin: 0 auto; padding: 18px 14px 40px; }
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner { animation:none; border-top-color:var(--accent, #4f7653); }
 }
+
+
+/* メイン写真の識別と切り替え */
+.file-card { position:relative; min-width:0; }
+.file-card .main-photo-badge {
+  display:block;
+  margin-bottom:6px;
+  padding:5px 7px;
+  border-radius:7px;
+  background:var(--accent-soft);
+  color:var(--text, #263126);
+  font-size:12px;
+  font-weight:750;
+  text-align:center;
+}
+.file-card.main-photo-card { outline:2px solid var(--accent, #4f7653); outline-offset:1px; border-radius:10px; padding:5px; }
+.file-card .set-main-photo-button,
+.file-card .photo-delete-button { width:100%; margin-top:8px; padding:7px 8px; min-height:36px; font-size:12px; }

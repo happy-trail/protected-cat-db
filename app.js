@@ -175,6 +175,50 @@ ${label}
     }
   }
 
+  async function setMainCatPhoto(fileId) {
+    const cat = state.selectedCat;
+    if (!cat || !canEdit()) return toast("メイン写真の設定はスタッフ・管理者のみ実行できます。");
+    const file = (cat.files || []).find(f => f.id === fileId);
+    if (!file) return toast("写真情報が見つかりません。");
+    if (file.is_main_photo || cat.main_photo_file_id === file.id) {
+      return toast("この写真はすでにメイン写真に設定されています。");
+    }
+    if (!window.confirm(`「${file.file_name || "名称未設定"}」をメイン写真に設定しますか？\\n保健所提出用PDFなどにこの写真が使用されます。`)) return;
+
+    try {
+      setDriveMessage("メイン写真を更新しています…");
+      // 先に既存のメイン指定を解除し、部分ユニーク制約に抵触しないようにする
+      const { error: clearError } = await state.supabase
+        .from("cat_files")
+        .update({ is_main_photo: false })
+        .eq("cat_id", cat.id)
+        .eq("is_main_photo", true);
+      if (clearError) throw clearError;
+
+      const { error: setError } = await state.supabase
+        .from("cat_files")
+        .update({ is_main_photo: true })
+        .eq("id", file.id)
+        .eq("cat_id", cat.id);
+      if (setError) throw setError;
+
+      const { error: catError } = await state.supabase
+        .from("cats")
+        .update({ main_photo_file_id: file.id, updated_by: state.user.id })
+        .eq("id", cat.id);
+      if (catError) throw catError;
+
+      toast("メイン写真を設定しました。PDFにもこの写真が使用されます。");
+      await openCat(cat.id);
+    } catch (e) {
+      console.error("メイン写真の設定に失敗しました", e);
+      setDriveMessage(`メイン写真を設定できませんでした：${e.message || e}`, "error");
+      toast(`メイン写真を設定できませんでした：${e.message || e}`);
+      // 状態が途中まで更新された場合も、DBの状態を読み直す
+      await openCat(cat.id);
+    }
+  }
+
   async function deleteCatPhoto(fileId) {
     const cat = state.selectedCat;
     if (!cat || !canEdit()) return toast("写真の削除はスタッフ・管理者のみ実行できます。");
@@ -1002,13 +1046,18 @@ ${label}
     if (!box || !state.selectedCat) return;
     const files = state.selectedCat.files || [];
     if (!files.length) { box.innerHTML = '<div class="muted">写真はまだありません。</div>'; return; }
-    box.innerHTML = files.map(f => `
-      <div class="file-card" data-drive-file-id="${esc(f.drive_file_id || "")}">
-        <div class="photo-loading">📷</div>
-        <small>${esc(f.file_name)}</small>
-        ${canEdit() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}
-      </div>
-    `).join("");
+    box.innerHTML = files.map(f => {
+      const isMain = Boolean(f.is_main_photo || state.selectedCat.main_photo_file_id === f.id);
+      return `
+        <div class="file-card ${isMain ? "main-photo-card" : ""}" data-drive-file-id="${esc(f.drive_file_id || "")}">
+          ${isMain ? '<span class="main-photo-badge">★ メイン写真</span>' : ""}
+          <div class="photo-loading">📷</div>
+          <small>${esc(f.file_name || "写真")}</small>
+          ${canEdit() && !isMain ? `<button type="button" class="secondary set-main-photo-button" data-file-id="${esc(f.id)}">メイン写真に設定</button>` : ""}
+          ${canEdit() ? `<button type="button" class="danger photo-delete-button" data-file-id="${esc(f.id)}">写真を削除</button>` : ""}
+        </div>
+      `;
+    }).join("");
     box.querySelectorAll("[data-drive-file-id]").forEach(async card => {
       const id = card.dataset.driveFileId;
       if (!id) return;
@@ -1024,6 +1073,9 @@ ${label}
     });
     box.querySelectorAll(".photo-delete-button").forEach(btn => {
       btn.addEventListener("click", () => deleteCatPhoto(btn.dataset.fileId));
+    });
+    box.querySelectorAll(".set-main-photo-button").forEach(btn => {
+      btn.addEventListener("click", () => setMainCatPhoto(btn.dataset.fileId));
     });
   }
 
