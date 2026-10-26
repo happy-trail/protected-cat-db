@@ -204,7 +204,7 @@
         </div>
         <form id="observation-form" class="form-grid">
           <label>記録日<input id="obs-date" type="date" required></label>
-          <label>記録区分<select id="obs-entry-type"><option value="daily">通常の観察</option><option value="rescue">保護時の記録</option><option value="death">死亡記録</option></select></label>
+          <label>記録区分<select id="obs-entry-type"><option value="daily">通常の観察</option><option value="rescue">保護時の記録</option></select></label>
           <div id="obs-daily-fields" class="full form-grid">
             <label>体調<input id="obs-condition"></label>
             <label>食欲<input id="obs-appetite"></label>
@@ -218,12 +218,7 @@
             <label>保護場所<input id="obs-rescue-location"></label>
             <label class="full">保護時の状況<textarea id="obs-rescue-details" rows="4"></textarea></label>
           </div>
-          <div id="obs-death-fields" class="full form-grid hidden">
-            <label>死亡日<input id="obs-death-date" type="date"></label>
-            <label>死因<input id="obs-death-cause" placeholder="例：老衰、病気、不明"></label>
-            <label class="full">動物病院<input id="obs-death-hospital"></label>
-            <label class="full">死亡時メモ<textarea id="obs-death-note" rows="3"></textarea></label>
-          </div>
+          
           <label class="full">記録・メモ<textarea id="obs-memo" rows="5"></textarea></label>
           <div class="form-actions full">
             <button class="primary" type="submit">観察日記を保存</button>
