@@ -1086,7 +1086,9 @@ ${label}
         o.rescue_details ? `保護時の状況：${o.rescue_details}` : "",
         o.memo || ""
       ].filter(Boolean);
-      return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${esc(parts.join(" / "))}</div></div>`;
+      // Escape diary text first, then preserve user-entered line breaks safely in the PDF.
+      const diaryContent = esc(parts.join(" / ")).replace(/\r\n|\r|\n/g, "<br>");
+      return `<div class="record-diary-row"><div class="record-diary-date">${esc(formatDate(o.observation_date))}</div><div class="record-diary-content">${diaryContent}</div></div>`;
     }).join("");
     const transfer = { transfer_date: cat.transfer_date, recipient_name: cat.transfer_recipient };
     const diary = `<div class="record-diary-empty" aria-hidden="true"></div>${diaryRows}`;
